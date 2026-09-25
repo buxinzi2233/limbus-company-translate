@@ -42,6 +42,12 @@ enum Commands {
         #[arg(short, long, default_value_t = 10)]
         limit: usize,
     },
+    /// 启动本地 WebUI 态势大盘与 REST API 服务
+    Ui {
+        /// 本地服务端口 (默认 3000)
+        #[arg(short, long, default_value_t = 3000)]
+        port: u16,
+    },
     /// 运行本地化门禁与语义一致性稽核 (支持 --json 诊断输出)
     Qa {
         /// 待检测中文文本
@@ -115,6 +121,9 @@ async fn main() -> Result<()> {
                     );
                 }
             }
+        }
+        Commands::Ui { port } => {
+            loc_server::start_server(port, store).await?;
         }
         Commands::Qa { text, kr } => {
             let issues = loc_qa::check_segment_pair(&kr, &text);
