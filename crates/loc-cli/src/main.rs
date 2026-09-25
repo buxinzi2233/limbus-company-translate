@@ -42,6 +42,19 @@ enum Commands {
         #[arg(short, long, default_value_t = 10)]
         limit: usize,
     },
+    /// 运行本地化门禁与语义一致性稽核 (支持 --json 诊断输出)
+    Qa {
+        /// 待检测中文文本
+        text: String,
+        /// 原文韩文文本 (用于比对占位符、数值与极性)
+        #[arg(short, long, default_value = "")]
+        kr: String,
+    },
+    /// 对中文文本执行确定性安全自动修复 (波浪号转半角 + 关键词空格补齐)
+    Fix {
+        /// 待修复的中文文本
+        text: String,
+    },
 }
 
 #[tokio::main]
@@ -101,6 +114,42 @@ async fn main() -> Result<()> {
                         r.speaker.as_deref().unwrap_or("-")
                     );
                 }
+            }
+        }
+        Commands::Qa { text, kr } => {
+            let issues = loc_qa::check_segment_pair(&kr, &text);
+            if cli.json {
+                println!(
+                    "{}",
+                    json!({
+                        "passed": issues.is_empty(),
+                        "issue_count": issues.len(),
+                        "issues": issues,
+                    })
+                );
+            } else if issues.is_empty() {
+                println!("✓ 门禁与语义稽核全部通过！0 违规项。");
+            } else {
+                println!("🚨 发现 {} 处潜在质量门禁或语义问题:", issues.len());
+                for (i, issue) in issues.iter().enumerate() {
+                    println!(
+                        "  [{}] [规则: {}] [级别: {:?}]\n      说明: {}\n      建议修复: {:?}",
+                        i + 1,
+                        issue.rule_id,
+                        issue.severity,
+                        issue.message,
+                        issue.suggested_fix.as_deref().unwrap_or("需人工/模型复核")
+                    );
+                }
+            }
+        }
+        Commands::Fix { text } => {
+            let fixed = loc_qa::auto_fix_target_zh(&text);
+            if cli.json {
+                println!("{}", json!({ "original": text, "fixed": fixed }));
+            } else {
+                println!("原文本: {}", text);
+                println!("修复后: {}", fixed);
             }
         }
     }
