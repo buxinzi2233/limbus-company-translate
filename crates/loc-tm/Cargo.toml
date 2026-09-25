@@ -14,5 +14,9 @@ strsim = { workspace = true }
 unicode-segmentation = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
+chrono = { workspace = true }
 tracing = { workspace = true }
 walkdir = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3.17"
