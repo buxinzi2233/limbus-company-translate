@@ -1,0 +1,52 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/loc-core",
+    "crates/loc-parser",
+    "crates/loc-tm",
+    "crates/loc-qa",
+    "crates/loc-server",
+    "crates/loc-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Antigravity & Hackimi Localization Team"]
+license = "MIT"
+
+[workspace.dependencies]
+# 内部 Crate
+loc-core = { path = "crates/loc-core" }
+loc-parser = { path = "crates/loc-parser" }
+loc-tm = { path = "crates/loc-tm" }
+loc-qa = { path = "crates/loc-qa" }
+loc-server = { path = "crates/loc-server" }
+
+# 序列化与数据
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
+rusqlite = { version = "0.32", features = ["bundled", "bundled-sqlcipher-vendored-openssl", "backup", "modern_sqlite"] }
+
+# 异步与 Web
+tokio = { version = "1.43", features = ["full"] }
+axum = { version = "0.8", features = ["ws"] }
+tower = { version = "0.5" }
+tower-http = { version = "0.6", features = ["cors", "trace", "fs"] }
+rust-embed = { version = "8.5" }
+
+# CLI 与工具
+clap = { version = "4.5", features = ["derive", "env"] }
+anyhow = "1.0"
+thiserror = "2.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# 文本与算法
+similar = { version = "2.7", features = ["inline"] }
+strsim = "0.11"
+regex = "1.11"
+unicode-segmentation = "1.12"
+walkdir = "2.5"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.11", features = ["v4", "serde"] }
