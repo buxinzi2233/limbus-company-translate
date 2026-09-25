@@ -7,10 +7,10 @@ use std::path::PathBuf;
 mod commands;
 
 #[derive(Parser)]
-#[command(name = "loc")]
+#[command(name = "lct")]
 #[command(author = "Antigravity & Hackimi Localization Team")]
-#[command(version = "0.1.0")]
-#[command(about = "边狱公司工业级本地化工程平台 (loc-engine)", long_about = None)]
+#[command(version = "0.2.0")]
+#[command(about = "Limbus Company Translate (LCT) - 边狱公司工业级本地化工程平台", long_about = None)]
 struct Cli {
     /// 启用机器可读的 JSON 格式输出
     #[arg(long, global = true)]
@@ -44,11 +44,14 @@ enum Commands {
         #[arg(short, long, default_value_t = 10)]
         limit: usize,
     },
-    /// 启动本地 WebUI 态势大盘与 REST API 服务
+    /// 启动本地 WebUI 态势大盘与 REST API 服务 (默认自动在默认浏览器中拉起大盘)
     Ui {
         /// 本地服务端口 (默认 3000)
         #[arg(short, long, default_value_t = 3000)]
         port: u16,
+        /// 禁止自动打开浏览器
+        #[arg(long)]
+        no_open: bool,
     },
     /// 运行本地化门禁与语义一致性稽核 (支持 --json 诊断输出)
     Qa {
@@ -207,8 +210,8 @@ async fn main() -> Result<()> {
                 }
             }
         }
-        Commands::Ui { port } => {
-            loc_server::start_server(port, store).await?;
+        Commands::Ui { port, no_open } => {
+            loc_server::start_server(port, !no_open, store).await?;
         }
         Commands::Qa { text, kr } => {
             let issues = loc_qa::check_segment_pair(&kr, &text);

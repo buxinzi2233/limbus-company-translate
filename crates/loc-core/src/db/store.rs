@@ -33,6 +33,24 @@ pub struct TMSearchResult {
     pub priority: i32,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SegmentWithFile {
+    pub id: i64,
+    pub project_id: String,
+    pub file_id: i64,
+    pub relative_path: String,
+    pub key_path: String,
+    pub source_kr: String,
+    pub previous_kr: Option<String>,
+    pub target_zh: Option<String>,
+    pub speaker: Option<String>,
+    pub context_info: Option<String>,
+    pub stage: Stage,
+    pub qa_passed: bool,
+    pub qa_issues: Option<String>,
+    pub updated_at: DateTime<Utc>,
+}
+
 #[derive(Clone)]
 pub struct Store {
     conn: Arc<Mutex<Connection>>,
@@ -474,5 +492,187 @@ impl Store {
             }
             Ok(results)
         }
+    }
+
+    /// 分页且按条件检索词条（支持按文件、生命周期阶段、关键词筛选）
+    pub fn query_segments_paged(
+        &self,
+        file_id: Option<i64>,
+        stage: Option<i32>,
+        search: Option<&str>,
+        offset: usize,
+        limit: usize,
+    ) -> Result<(usize, Vec<SegmentWithFile>)> {
+        let conn = self.conn.lock().unwrap();
+        let mut where_clauses = Vec::new();
+        let mut params: Vec<rusqlite::types::Value> = Vec::new();
+
+        if let Some(fid) = file_id {
+            where_clauses.push(format!("s.file_id = ?{}", params.len() + 1));
+            params.push(fid.into());
+        }
+
+        if let Some(stg) = stage {
+            where_clauses.push(format!("s.stage = ?{}", params.len() + 1));
+            params.push(stg.into());
+        }
+
+        if let Some(q) = search {
+            if !q.trim().is_empty() {
+                let pat = format!("%{}%", q.trim());
+                where_clauses.push(format!(
+                    "(s.source_kr LIKE ?{0} OR s.target_zh LIKE ?{0} OR s.speaker LIKE ?{0} OR f.relative_path LIKE ?{0})",
+                    params.len() + 1
+                ));
+                params.push(pat.into());
+            }
+        }
+
+        let where_sql = if where_clauses.is_empty() {
+            "".to_string()
+        } else {
+            format!("WHERE {}", where_clauses.join(" AND "))
+        };
+
+        // 1. 获取满足条件的总条数
+        let count_sql = format!(
+            "SELECT COUNT(*) FROM segments s JOIN files f ON f.id = s.file_id {}",
+            where_sql
+        );
+        let mut count_stmt = conn.prepare(&count_sql)?;
+        let param_refs: Vec<&dyn rusqlite::ToSql> = params.iter().map(|v| v as &dyn rusqlite::ToSql).collect();
+        let total: usize = count_stmt.query_row(&param_refs[..], |r| r.get(0))?;
+
+        // 2. 分页查数据
+        let select_sql = format!(
+            r#"
+            SELECT s.id, s.project_id, s.file_id, f.relative_path, s.key_path,
+                   s.source_kr, s.previous_kr, s.target_zh, s.speaker, s.context_info,
+                   s.stage, s.qa_passed, s.qa_issues, s.updated_at
+            FROM segments s
+            JOIN files f ON f.id = s.file_id
+            {}
+            ORDER BY f.relative_path ASC, s.id ASC
+            LIMIT ?{} OFFSET ?{}
+            "#,
+            where_sql,
+            params.len() + 1,
+            params.len() + 2
+        );
+
+        params.push((limit as i64).into());
+        params.push((offset as i64).into());
+        let param_refs: Vec<&dyn rusqlite::ToSql> = params.iter().map(|v| v as &dyn rusqlite::ToSql).collect();
+
+        let mut stmt = conn.prepare(&select_sql)?;
+        let rows = stmt.query_map(&param_refs[..], |row| {
+            let stage_int: i32 = row.get(10)?;
+            let qa_passed_int: i32 = row.get(11)?;
+            let updated_str: String = row.get(13)?;
+            Ok(SegmentWithFile {
+                id: row.get(0)?,
+                project_id: row.get(1)?,
+                file_id: row.get(2)?,
+                relative_path: row.get(3)?,
+                key_path: row.get(4)?,
+                source_kr: row.get(5)?,
+                previous_kr: row.get(6)?,
+                target_zh: row.get(7)?,
+                speaker: row.get(8)?,
+                context_info: row.get(9)?,
+                stage: Stage::from(stage_int),
+                qa_passed: qa_passed_int != 0,
+                qa_issues: row.get(12)?,
+                updated_at: DateTime::parse_from_rfc3339(&updated_str).unwrap().with_timezone(&Utc),
+            })
+        })?;
+
+        let mut items = Vec::new();
+        for r in rows {
+            items.push(r?);
+        }
+
+        Ok((total, items))
+    }
+
+    /// 更新单条词条的译文及审核阶段
+    pub fn update_segment_translation(
+        &self,
+        id: i64,
+        target_zh: &str,
+        stage: Option<i32>,
+        qa_passed: bool,
+        qa_issues: Option<&str>,
+    ) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        let now = Utc::now().to_rfc3339();
+        if let Some(stg) = stage {
+            conn.execute(
+                r#"
+                UPDATE segments
+                SET target_zh = ?1, stage = ?2, qa_passed = ?3, qa_issues = ?4, updated_at = ?5
+                WHERE id = ?6
+                "#,
+                params![target_zh, stg, if qa_passed { 1 } else { 0 }, qa_issues, now, id],
+            )?;
+        } else {
+            conn.execute(
+                r#"
+                UPDATE segments
+                SET target_zh = ?1, qa_passed = ?2, qa_issues = ?3, updated_at = ?4
+                WHERE id = ?5
+                "#,
+                params![target_zh, if qa_passed { 1 } else { 0 }, qa_issues, now, id],
+            )?;
+        }
+        Ok(())
+    }
+
+    /// 获取大盘态势统计数据 (全局完成度、分模块雷达、TM 知识水位)
+    pub fn get_project_stats(&self) -> Result<serde_json::Value> {
+        let conn = self.conn.lock().unwrap();
+        let total_files: i64 = conn.query_row("SELECT COUNT(*) FROM files", [], |r| r.get(0)).unwrap_or(0);
+        let total_segments: i64 = conn.query_row("SELECT COALESCE(SUM(total_segments), 0) FROM files", [], |r| r.get(0)).unwrap_or(0);
+        let translated_segments: i64 = conn.query_row("SELECT COALESCE(SUM(translated_segments), 0) FROM files", [], |r| r.get(0)).unwrap_or(0);
+        let reviewed_segments: i64 = conn.query_row("SELECT COALESCE(SUM(reviewed_segments), 0) FROM files", [], |r| r.get(0)).unwrap_or(0);
+        let tm_entries: i64 = conn.query_row("SELECT COUNT(*) FROM tm_entries", [], |r| r.get(0)).unwrap_or(0);
+
+        // 分类统计 (story, battle, system)
+        let mut stmt = conn.prepare(
+            "SELECT category, COALESCE(SUM(total_segments), 0), COALESCE(SUM(translated_segments), 0) FROM files GROUP BY category"
+        )?;
+        let cat_rows = stmt.query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, i64>(1)?,
+                row.get::<_, i64>(2)?,
+            ))
+        })?;
+        let mut categories = serde_json::Map::new();
+        for r in cat_rows {
+            let (cat, tot, trans) = r?;
+            categories.insert(cat, serde_json::json!({ "total": tot, "translated": trans }));
+        }
+
+        // Stage 阶段统计
+        let mut stage_stmt = conn.prepare("SELECT stage, COUNT(*) FROM segments GROUP BY stage")?;
+        let stage_rows = stage_stmt.query_map([], |row| {
+            Ok((row.get::<_, i32>(0)?, row.get::<_, i64>(1)?))
+        })?;
+        let mut stages = serde_json::Map::new();
+        for r in stage_rows {
+            let (stg, count) = r?;
+            stages.insert(stg.to_string(), count.into());
+        }
+
+        Ok(serde_json::json!({
+            "total_files": total_files,
+            "total_segments": total_segments,
+            "translated_segments": translated_segments,
+            "reviewed_segments": reviewed_segments,
+            "tm_entries": tm_entries,
+            "categories": categories,
+            "stages": stages,
+        }))
     }
 }

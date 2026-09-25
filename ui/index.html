@@ -3,21 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>边狱公司本地化工程平台 (LLC Studio)</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>LCT // LIMBUS COMPANY TRANSLATE</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230b0e14'/><polygon points='20,20 80,20 80,80 50,80 50,50 20,50' fill='%23fcee0a'/><text x='25' y='85' fill='%23ffffff' font-family='monospace' font-weight='bold' font-size='24'>LCT</text></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
       :root {
-        --bg-main: #0d1117;
-        --bg-card: #161b22;
-        --bg-card-hover: #1c2128;
-        --border: #30363d;
-        --text-primary: #f0f6fc;
-        --text-secondary: #8b949e;
-        --accent-gold: #f8c200;
-        --accent-red: #f85149;
-        --accent-green: #3fb950;
-        --accent-blue: #58a6ff;
-        --accent-purple: #bc8cff;
+        --bg-space: #06080c;
+        --bg-surface: #0a0d12;
+        --bg-card: #10151d;
+        --bg-card-hover: #161d28;
+        --bg-elevated: #1d2533;
+        
+        --border-subtle: rgba(255, 255, 255, 0.08);
+        --border-ruler: rgba(255, 255, 255, 0.16);
+        --border-focus: rgba(252, 238, 10, 0.5);
+        
+        --text-primary: #f2f5f8;
+        --text-secondary: #8c97a8;
+        --text-muted: #535d6e;
+        
+        --accent-tech: #fcee0a; /* 终末地明黄 */
+        --accent-gold: #c8a165; /* 边狱暗金 */
+        --accent-cyan: #00d2ff; /* 拓扑冷青 */
+        --accent-red: #ff4646;  /* 战损警戒红 */
+        --accent-green: #2ee584;/* 验证通过绿 */
+        
+        --font-mono: "JetBrains Mono", SFMono-Regular, Consolas, Menlo, monospace;
+        --font-sans: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       }
       * {
         box-sizing: border-box;
@@ -25,16 +39,52 @@
         padding: 0;
       }
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
-        background-color: var(--bg-main);
+        font-family: var(--font-sans);
+        background-color: var(--bg-space);
         color: var(--text-primary);
         height: 100vh;
         overflow: hidden;
+        background-image: 
+          linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+        background-size: 32px 32px;
       }
       #root {
         height: 100%;
         display: flex;
         flex-direction: column;
+      }
+      /* 工业级定制精细滚动条 */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg-surface);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border-ruler);
+        border-radius: 0px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--accent-tech);
+      }
+
+      /* 终末地切角辅助类 */
+      .cut-corner-br {
+        clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+      }
+      .cut-corner-tl {
+        clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+      }
+
+      /* 脉冲扫描指示点 */
+      @keyframes pulse-cyan {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(0.85); }
+      }
+      .live-dot {
+        animation: pulse-cyan 2s infinite ease-in-out;
       }
     </style>
   </head>

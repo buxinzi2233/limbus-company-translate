@@ -6,7 +6,7 @@ authors.workspace = true
 license.workspace = true
 
 [[bin]]
-name = "loc"
+name = "lct"
 path = "src/main.rs"
 
 [lib]

@@ -9,13 +9,26 @@ use tracing::info;
 pub use routes::create_router;
 
 /// 启动 Axum HTTP 服务，同时提供 REST API 与内嵌 WebUI
-pub async fn start_server(port: u16, store: Store) -> Result<()> {
+pub async fn start_server(port: u16, open_browser: bool, store: Store) -> Result<()> {
     let app = create_router(store);
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
-    info!("🚀 loc-engine WebUI 服务已启动: http://{}", addr);
+    let url = format!("http://{}", addr);
+    info!("🚀 LCT WebUI 态势大盘服务已启动: {}", url);
     println!("==================================================");
-    println!("🚀 边狱公司本地化工作台 (WebUI) 正在运行:");
-    println!("👉 本地访问地址: http://{}", addr);
+    println!("🚀 LCT (Limbus Company Translate) 态势大盘正在运行:");
+    println!("👉 本地访问地址: {}", url);
+    if open_browser {
+        println!("🌐 正在调用系统默认浏览器打开大盘...");
+        tokio::spawn(async move {
+            tokio::time::sleep(tokio::time::Duration::from_millis(250)).await;
+            #[cfg(target_os = "linux")]
+            let _ = std::process::Command::new("xdg-open").arg(&url).spawn();
+            #[cfg(target_os = "macos")]
+            let _ = std::process::Command::new("open").arg(&url).spawn();
+            #[cfg(target_os = "windows")]
+            let _ = std::process::Command::new("cmd").args(["/c", "start", &url]).spawn();
+        });
+    }
     println!("   按 Ctrl+C 可停止服务");
     println!("==================================================");
 
