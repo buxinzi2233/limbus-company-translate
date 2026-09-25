@@ -3,33 +3,37 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LCT // LIMBUS COMPANY TRANSLATE</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230b0e14'/><polygon points='20,20 80,20 80,80 50,80 50,50 20,50' fill='%23fcee0a'/><text x='25' y='85' fill='%23ffffff' font-family='monospace' font-weight='bold' font-size='24'>LCT</text></svg>" />
+    <title>LCT // RHINE LAB SCIENTIFIC TRANSLATE</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='12' fill='%230b121e'/><polygon points='50,15 85,35 85,65 50,85 15,65 15,35' fill='none' stroke='%232dd4bf' stroke-width='6'/><polyline points='35,42 50,30 65,42' fill='none' stroke='%23f59e0b' stroke-width='5'/><text x='50' y='68' fill='%23f1f5f9' font-family='monospace' font-weight='bold' font-size='22' text-anchor='middle'>RL</text></svg>" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
       :root {
-        --bg-space: #06080c;
-        --bg-surface: #0a0d12;
-        --bg-card: #10151d;
-        --bg-card-hover: #161d28;
-        --bg-elevated: #1d2533;
-        
-        --border-subtle: rgba(255, 255, 255, 0.08);
-        --border-ruler: rgba(255, 255, 255, 0.16);
-        --border-focus: rgba(252, 238, 10, 0.5);
-        
-        --text-primary: #f2f5f8;
-        --text-secondary: #8c97a8;
-        --text-muted: #535d6e;
-        
-        --accent-tech: #fcee0a; /* 终末地明黄 */
-        --accent-gold: #c8a165; /* 边狱暗金 */
-        --accent-cyan: #00d2ff; /* 拓扑冷青 */
-        --accent-red: #ff4646;  /* 战损警戒红 */
-        --accent-green: #2ee584;/* 验证通过绿 */
-        
+        /* 莱茵生命科研联合体 (Rhine Lab LLC) 官方视觉 Tokens */
+        --rl-bg-space: #0b121e;       /* 深空科研控制室底色 */
+        --rl-bg-surface: #0f1827;     /* 无菌舱基底 */
+        --rl-bg-card: rgba(17, 27, 43, 0.75); /* 半透明磨砂亚克力玻璃 */
+        --rl-bg-card-hover: rgba(23, 37, 59, 0.85);
+        --rl-bg-elevated: rgba(28, 45, 71, 0.9);
+
+        --rl-border-subtle: rgba(148, 163, 184, 0.12); /* 细微微米基线 */
+        --rl-border-ruler: rgba(148, 163, 184, 0.22);  /* 测绘标尺线 */
+        --rl-border-mint: rgba(45, 212, 191, 0.35);    /* 薄荷晶体导轨 */
+        --rl-border-amber: rgba(245, 158, 11, 0.4);    /* 遥测琥珀高亮线 */
+
+        --rl-text-primary: #f1f5f9;   /* 纯洁无菌白 (Pristine White) */
+        --rl-text-secondary: #94a3b8; /* 铅灰技术注记 */
+        --rl-text-muted: #64748b;     /* 低阶灰 */
+
+        --rl-mint: #2dd4bf;           /* 翠玉梦境神经元薄荷绿 (Rhine Mint) */
+        --rl-mint-glow: rgba(45, 212, 191, 0.2);
+        --rl-amber: #f59e0b;          /* 孤星太空舱遥测琥珀金 (Telemetry Amber) */
+        --rl-amber-hover: #fbbf24;
+        --rl-coral: #f87171;          /* 实验熔断警报珊瑚红 (Lab Alert Coral) */
+        --rl-green: #34d399;          /* 验证通过翠绿 */
+        --rl-cyan: #38bdf8;           /* 视界天体苍蓝 */
+
         --font-mono: "JetBrains Mono", SFMono-Regular, Consolas, Menlo, monospace;
         --font-sans: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       }
@@ -40,51 +44,59 @@
       }
       body {
         font-family: var(--font-sans);
-        background-color: var(--bg-space);
-        color: var(--text-primary);
+        background-color: var(--rl-bg-space);
+        color: var(--rl-text-primary);
         height: 100vh;
         overflow: hidden;
+        /* 莱茵生命实验室微米坐标点阵背景 */
         background-image: 
-          linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
-        background-size: 32px 32px;
+          radial-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+          linear-gradient(to right, rgba(45, 212, 191, 0.02) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(45, 212, 191, 0.02) 1px, transparent 1px);
+        background-size: 24px 24px, 120px 120px, 120px 120px;
       }
       #root {
         height: 100%;
         display: flex;
         flex-direction: column;
       }
-      /* 工业级定制精细滚动条 */
+      /* 精致科研控制台细滚动条 */
       ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+        width: 5px;
+        height: 5px;
       }
       ::-webkit-scrollbar-track {
-        background: var(--bg-surface);
+        background: var(--rl-bg-surface);
       }
       ::-webkit-scrollbar-thumb {
-        background: var(--border-ruler);
-        border-radius: 0px;
+        background: var(--rl-border-ruler);
+        border-radius: 3px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: var(--accent-tech);
+        background: var(--rl-mint);
       }
 
-      /* 终末地切角辅助类 */
-      .cut-corner-br {
-        clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
-      }
-      .cut-corner-tl {
-        clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+      /* 磨砂玻璃通用类 */
+      .rl-frosted-glass {
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
       }
 
-      /* 脉冲扫描指示点 */
-      @keyframes pulse-cyan {
-        0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.4; transform: scale(0.85); }
+      /* 脉冲生态微光指示点 */
+      @keyframes pulse-mint {
+        0%, 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 3px #2dd4bf); }
+        50% { opacity: 0.45; transform: scale(0.85); filter: drop-shadow(0 0 1px #2dd4bf); }
       }
       .live-dot {
-        animation: pulse-cyan 2s infinite ease-in-out;
+        animation: pulse-mint 2.4s infinite ease-in-out;
+      }
+
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .spin-icon {
+        animation: spin 1s linear infinite;
       }
     </style>
   </head>

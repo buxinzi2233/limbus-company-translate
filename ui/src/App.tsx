@@ -23,6 +23,7 @@ import {
   Lock,
   ArrowRight,
   CornerDownLeft,
+  Sliders,
 } from 'lucide-react';
 
 interface SegmentItem {
@@ -253,19 +254,19 @@ export default function App() {
               : s
           )
         );
-        showNotification(`✓ 条目 #${item.id} 已持久化保存并锁定`);
+        showNotification(`✓ 标本条目 #${item.id} 已完成审校并归档`);
 
         // 如果在裁决箱中，自动步进至下一项
         if (isFocus && focusItems.length > 0) {
           if (focusIndex < focusItems.length - 1) {
             setFocusIndex(focusIndex + 1);
           } else {
-            showNotification('🎉 当前批次存疑条目已全部裁决完毕！');
+            showNotification('🎉 莱茵生命待裁决标本队列已全部处理完毕');
           }
         }
       }
     } catch (e) {
-      showNotification(`🚨 保存失败: ${e}`);
+      showNotification(`🚨 存盘失败: ${e}`);
     } finally {
       setSavingId(null);
     }
@@ -283,14 +284,14 @@ export default function App() {
       if (res.ok) {
         const data = await res.json();
         setEditingTranslations((prev) => ({ ...prev, [item.id]: data.fixed }));
-        showNotification('✓ 确定性自愈完成 (全角波浪号已纠正为半角 + 关键词空格已补齐)');
+        showNotification('✓ 规范自愈完成：全角符号已更正，词条空格已对齐');
       }
     } catch {
       const fixed = curText
         .replace(/～|〜/g, '~')
         .replace(/\[([^\]]+)\](?!\s)/g, '[$1] ');
       setEditingTranslations((prev) => ({ ...prev, [item.id]: fixed }));
-      showNotification('✓ [本地规则] 修复完成');
+      showNotification('✓ 本地规则修复完成');
     }
   };
 
@@ -298,7 +299,7 @@ export default function App() {
   const handleSyncAll = async () => {
     setIsSyncing(true);
     await Promise.all([fetchStatus(), fetchSegments(page, stageFilter, searchFilter)]);
-    showNotification('🚀 态势大盘与本地词条缓存已全量同步刷新');
+    showNotification('🚀 莱茵生态大盘与本地标本缓存已完成同步');
     setIsSyncing(false);
   };
 
@@ -314,14 +315,14 @@ export default function App() {
   const pendingCount = stats.total_segments - stats.translated_segments;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-space)', overflow: 'hidden' }}>
-      {/* 顶部终末地工业级技术标头 (Tactical Header) */}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--rl-bg-space)', overflow: 'hidden' }}>
+      {/* 顶部莱茵生命科研联合体控制标头 (Rhine Lab Executive Header) */}
       <header
         style={{
           height: '56px',
           flexShrink: 0,
-          background: 'var(--bg-surface)',
-          borderBottom: '1px solid var(--border-ruler)',
+          background: 'var(--rl-bg-surface)',
+          borderBottom: '1px solid var(--rl-border-subtle)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -330,40 +331,46 @@ export default function App() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          {/* LCT 品牌标志徽标 */}
+          {/* 莱茵生命光学晶体徽标 (Rhine Lab Optical Monogram) */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              background: 'var(--accent-tech)',
-              color: '#000',
-              padding: '4px 10px',
-              fontWeight: 800,
-              fontSize: '13px',
-              fontFamily: 'var(--font-mono)',
-              letterSpacing: '1px',
-              clipPath: 'polygon(0 0, 100% 0, 100% 70%, 85% 100%, 0 100%)',
+              justifyContent: 'center',
+              width: '32px',
+              height: '32px',
+              borderRadius: '6px',
+              background: 'rgba(45, 212, 191, 0.12)',
+              border: '1px solid var(--rl-border-mint)',
+              position: 'relative',
             }}
           >
-            LCT
+            <svg width="22" height="22" viewBox="0 0 100 100" fill="none">
+              <polygon points="50,10 90,32 90,68 50,90 10,68 10,32" stroke="#2dd4bf" strokeWidth="7" fill="none" />
+              <polyline points="32,40 50,26 68,40" stroke="#f59e0b" strokeWidth="6" />
+              <text x="50" y="68" fill="#f1f5f9" fontFamily="monospace" fontWeight="bold" fontSize="26" textAnchor="middle">RL</text>
+            </svg>
           </div>
+
           <div>
-            <div style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '0.5px', color: 'var(--text-primary)' }}>
-              LIMBUS COMPANY TRANSLATE
+            <div style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '0.8px', color: 'var(--rl-text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>RHINE LAB</span>
+              <span style={{ color: 'var(--rl-text-muted)' }}>//</span>
+              <span style={{ color: 'var(--rl-mint)', fontWeight: 600 }}>LIMBUS TRANSLATE</span>
             </div>
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-              SECTOR 00 // URBAN ZERO ASSOCIATION PROTOCOL // SYS.VER: 0.2.0-LCT
+            <div style={{ fontSize: '10px', color: 'var(--rl-text-muted)', fontFamily: 'var(--font-mono)' }}>
+              COLUMBIA TRIMOUUNTS RESEARCH CONSORTIUM // LCT-SYS.VER: 0.2.0-RL
             </div>
           </div>
         </div>
 
-        {/* 导航标签切换器 */}
-        <nav style={{ display: 'flex', gap: '4px' }}>
+        {/* 科室导航选项卡 (Rhine Lab Section Navigator) */}
+        <nav style={{ display: 'flex', gap: '6px' }}>
           {[
-            { id: 'observatory', label: '01 // TACTICAL OBSERVATORY', icon: Activity },
-            { id: 'workbench', label: `02 // WORKBENCH (${totalSegments.toLocaleString()})`, icon: BookOpen },
-            { id: 'radar', label: '03 // REVERSE RADAR', icon: Search },
-            { id: 'focus', label: `04 // FOCUS BOX (${(stats.stages['0'] || 0).toLocaleString()})`, icon: Eye },
+            { id: 'observatory', label: 'SEC-01 // OBSERVATORY', icon: Activity },
+            { id: 'workbench', label: `SEC-02 // WORKBENCH (${totalSegments.toLocaleString()})`, icon: BookOpen },
+            { id: 'radar', label: 'SEC-03 // SCRIPT RADAR', icon: Search },
+            { id: 'focus', label: `SEC-04 // FOCUS BOX (${(stats.stages['0'] || 0).toLocaleString()})`, icon: Eye },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -376,11 +383,12 @@ export default function App() {
                   if (tab.id === 'focus') fetchFocusItems();
                 }}
                 style={{
-                  background: isActive ? 'var(--bg-elevated)' : 'transparent',
-                  color: isActive ? 'var(--accent-tech)' : 'var(--text-secondary)',
+                  background: isActive ? 'var(--rl-bg-elevated)' : 'transparent',
+                  color: isActive ? 'var(--rl-mint)' : 'var(--rl-text-secondary)',
                   border: '1px solid',
-                  borderColor: isActive ? 'var(--accent-tech)' : 'transparent',
-                  padding: '6px 12px',
+                  borderColor: isActive ? 'var(--rl-border-mint)' : 'transparent',
+                  borderRadius: '4px',
+                  padding: '5px 12px',
                   fontSize: '11px',
                   fontWeight: 600,
                   fontFamily: 'var(--font-mono)',
@@ -390,9 +398,10 @@ export default function App() {
                   gap: '6px',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
+                  boxShadow: isActive ? '0 0 12px rgba(45,212,191,0.1)' : 'none',
                 }}
               >
-                <Icon size={13} color={isActive ? 'var(--accent-tech)' : 'var(--text-secondary)'} />
+                <Icon size={13} color={isActive ? 'var(--rl-mint)' : 'var(--rl-text-secondary)'} />
                 {tab.label}
               </button>
             );
@@ -405,25 +414,25 @@ export default function App() {
             <span
               className="live-dot"
               style={{
-                width: '8px',
-                height: '8px',
+                width: '7px',
+                height: '7px',
                 borderRadius: '50%',
-                background: stats.tm_entries > 0 ? 'var(--accent-cyan)' : 'var(--accent-red)',
+                background: stats.tm_entries > 0 ? 'var(--rl-mint)' : 'var(--rl-coral)',
                 display: 'inline-block',
-                boxShadow: `0 0 8px ${stats.tm_entries > 0 ? 'var(--accent-cyan)' : 'var(--accent-red)'}`,
               }}
             />
-            <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--accent-cyan)' }}>
-              SYS.ONLINE: {stats.tm_entries.toLocaleString()} TM
+            <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--rl-mint)' }}>
+              SYS.ONLINE: {stats.tm_entries.toLocaleString()} TM [ECOLOGICAL]
             </span>
           </div>
           <button
             onClick={handleSyncAll}
             disabled={isSyncing}
             style={{
-              background: 'transparent',
-              border: '1px solid var(--border-ruler)',
-              color: 'var(--text-primary)',
+              background: 'rgba(15, 24, 39, 0.6)',
+              border: '1px solid var(--rl-border-subtle)',
+              borderRadius: '4px',
+              color: 'var(--rl-text-secondary)',
               padding: '4px 10px',
               fontSize: '11px',
               fontFamily: 'var(--font-mono)',
@@ -431,6 +440,7 @@ export default function App() {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
+              transition: 'border-color 0.15s ease, color 0.15s ease',
             }}
           >
             <RefreshCw size={12} className={isSyncing ? 'spin-icon' : ''} />
@@ -446,13 +456,15 @@ export default function App() {
             position: 'fixed',
             top: '64px',
             right: '20px',
-            background: 'var(--bg-elevated)',
-            borderLeft: '4px solid var(--accent-tech)',
+            background: 'var(--rl-bg-elevated)',
+            borderLeft: '4px solid var(--rl-mint)',
+            border: '1px solid var(--rl-border-subtle)',
+            borderRadius: '4px',
             padding: '10px 18px',
             fontSize: '12px',
             fontFamily: 'var(--font-mono)',
-            color: 'var(--text-primary)',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.8)',
+            color: 'var(--rl-text-primary)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
             zIndex: 100,
           }}
         >
@@ -463,131 +475,143 @@ export default function App() {
       {/* 主工作区视图切换 */}
       <main style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* ============================================================== */}
-        {/* TAB 1: 态势大盘 (Tactical Observatory) */}
+        {/* TAB 1: 态势大盘 (SEC-01: OBSERVATORY) */}
         {/* ============================================================== */}
         {activeTab === 'observatory' && (
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* 顶层四大极端对比指标卡 */}
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            {/* 顶层四大遥测指标舱 (Telemetry Chambers) */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', flexShrink: 0 }}>
-              {/* 指标卡 1: 全局完成率 */}
+              {/* 指标舱 1: 全局完成率 */}
               <div
+                className="rl-frosted-glass"
                 style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border-subtle)',
-                  padding: '18px',
+                  background: 'var(--rl-bg-card)',
+                  border: '1px solid var(--rl-border-subtle)',
+                  borderRadius: '6px',
+                  padding: '16px 20px',
                   position: 'relative',
                   overflow: 'hidden',
                 }}
               >
-                <div style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', letterSpacing: '1px' }}>
-                  OVERALL COMPLETION RATE
+                <div style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--rl-text-muted)', letterSpacing: '0.8px' }}>
+                  OVERALL COMPLETION [GLOBAL]
                 </div>
-                <div style={{ fontSize: '34px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--accent-tech)', margin: '6px 0' }}>
+                <div style={{ fontSize: '32px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--rl-mint)', margin: '6px 0' }}>
                   {completionPercent}%
                 </div>
-                <div style={{ height: '4px', background: 'var(--border-subtle)', width: '100%', position: 'relative' }}>
-                  <div style={{ height: '100%', width: `${completionPercent}%`, background: 'var(--accent-tech)' }} />
+                <div style={{ height: '3px', background: 'rgba(148, 163, 184, 0.15)', width: '100%', position: 'relative', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${completionPercent}%`, background: 'var(--rl-mint)', boxShadow: '0 0 8px var(--rl-mint)' }} />
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '8px', fontFamily: 'var(--font-mono)' }}>
+                <div style={{ fontSize: '11px', color: 'var(--rl-text-secondary)', marginTop: '8px', fontFamily: 'var(--font-mono)' }}>
                   {stats.translated_segments.toLocaleString()} / {stats.total_segments.toLocaleString()} SEGMENTS
                 </div>
               </div>
 
-              {/* 指标卡 2: 待开荒生肉条目 */}
+              {/* 指标舱 2: 待开荒生肉条目 */}
               <div
+                className="rl-frosted-glass"
                 style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border-subtle)',
-                  padding: '18px',
+                  background: 'var(--rl-bg-card)',
+                  border: '1px solid var(--rl-border-subtle)',
+                  borderRadius: '6px',
+                  padding: '16px 20px',
                   position: 'relative',
                 }}
               >
-                <div style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', letterSpacing: '1px' }}>
-                  PENDING RAW SEGMENTS
+                <div style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--rl-text-muted)', letterSpacing: '0.8px' }}>
+                  PENDING RAW NODES [ACTION REQUIRED]
                 </div>
                 <div
                   style={{
-                    fontSize: '34px',
+                    fontSize: '32px',
                     fontWeight: 800,
                     fontFamily: 'var(--font-mono)',
-                    color: pendingCount > 0 ? 'var(--accent-red)' : 'var(--accent-green)',
+                    color: pendingCount > 0 ? 'var(--rl-amber)' : 'var(--rl-green)',
                     margin: '6px 0',
                   }}
                 >
                   {pendingCount}
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-                  UNTRANSLATED NODES IN WORKSPACE
+                <div style={{ fontSize: '11px', color: 'var(--rl-text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                  UNTRANSLATED SPECIMENS IN LAB
                 </div>
                 <div style={{ marginTop: '8px', display: 'flex', gap: '6px' }}>
                   <span
                     style={{
                       fontSize: '10px',
-                      background: pendingCount > 0 ? 'rgba(255,70,70,0.15)' : 'rgba(46,229,132,0.15)',
-                      color: pendingCount > 0 ? 'var(--accent-red)' : 'var(--accent-green)',
-                      padding: '2px 6px',
+                      background: pendingCount > 0 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(52, 211, 153, 0.15)',
+                      color: pendingCount > 0 ? 'var(--rl-amber)' : 'var(--rl-green)',
+                      padding: '2px 8px',
+                      borderRadius: '3px',
                       fontFamily: 'var(--font-mono)',
                     }}
                   >
-                    {pendingCount > 0 ? 'ACTION REQUIRED' : 'ALL CLEAR'}
+                    {pendingCount > 0 ? 'STATUS: PENDING' : 'STATUS: ALL CLEAR'}
                   </span>
                 </div>
               </div>
 
-              {/* 指标卡 3: TM 翻译记忆库 */}
+              {/* 指标舱 3: TM 翻译记忆库 */}
               <div
+                className="rl-frosted-glass"
                 style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border-subtle)',
-                  padding: '18px',
+                  background: 'var(--rl-bg-card)',
+                  border: '1px solid var(--rl-border-subtle)',
+                  borderRadius: '6px',
+                  padding: '16px 20px',
                 }}
               >
-                <div style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', letterSpacing: '1px' }}>
-                  TM MEMORY CACHE
+                <div style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--rl-text-muted)', letterSpacing: '0.8px' }}>
+                  TM MEMORY CACHE [RHINE REPOSITORY]
                 </div>
-                <div style={{ fontSize: '34px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--accent-cyan)', margin: '6px 0' }}>
+                <div style={{ fontSize: '32px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--rl-cyan)', margin: '6px 0' }}>
                   {stats.tm_entries.toLocaleString()}
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-                  ORIGIN: BASELINE + PART2 DUAL FEED
+                <div style={{ fontSize: '11px', color: 'var(--rl-text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                  FEED: BASELINE + PART2 DUAL FEED
                 </div>
-                <div style={{ marginTop: '8px', fontSize: '10px', color: 'var(--accent-green)', fontFamily: 'var(--font-mono)' }}>
+                <div style={{ marginTop: '8px', fontSize: '10px', color: 'var(--rl-mint)', fontFamily: 'var(--font-mono)' }}>
                   ✓ 100% INVERTED FTS5 INDEXED
                 </div>
               </div>
 
-              {/* 指标卡 4: 门禁防御体系 */}
+              {/* 指标舱 4: 门禁防御体系 */}
               <div
+                className="rl-frosted-glass"
                 style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border-subtle)',
-                  padding: '18px',
+                  background: 'var(--rl-bg-card)',
+                  border: '1px solid var(--rl-border-subtle)',
+                  borderRadius: '6px',
+                  padding: '16px 20px',
                 }}
               >
-                <div style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', letterSpacing: '1px' }}>
-                  QA GATEKEEPER DEFENSE
+                <div style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--rl-text-muted)', letterSpacing: '0.8px' }}>
+                  QA GATE DEFENSE [SPECIMEN INTEGRITY]
                 </div>
-                <div style={{ fontSize: '34px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--accent-green)', margin: '6px 0' }}>
+                <div style={{ fontSize: '32px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--rl-green)', margin: '6px 0' }}>
                   100% PASS
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-                  L01~L08 FATAL VIOLATIONS: 0
+                <div style={{ fontSize: '11px', color: 'var(--rl-text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                  L01~L08 FATAL DEFENSE ACTIVE
                 </div>
-                <div style={{ marginTop: '8px', fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                  TILDE / BRACKET / POLARITY CHECKED
+                <div style={{ marginTop: '8px', fontSize: '10px', color: 'var(--rl-text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  ZERO TOLERANCE TILDE & TMP AUDITED
                 </div>
               </div>
             </div>
 
-            {/* 中层：分模块态势雷达与控制台日志 */}
+            {/* 中层：分科室态势雷达与控制台日志 */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px' }}>
-              {/* 分模块态势雷达 */}
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', padding: '20px' }}>
+              {/* 分科室态势雷达 */}
+              <div
+                className="rl-frosted-glass"
+                style={{ background: 'var(--rl-bg-card)', border: '1px solid var(--rl-border-subtle)', borderRadius: '6px', padding: '20px' }}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
-                    SECTOR PROGRESS BREAKDOWN // 模块态势图谱
+                  <div style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--rl-text-primary)' }}>
+                    SECTOR PROGRESS BREAKDOWN // 科室生态图谱
                   </div>
-                  <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--rl-text-muted)' }}>
                     TOTAL {stats.total_files.toLocaleString()} FILES
                   </span>
                 </div>
@@ -598,27 +622,27 @@ export default function App() {
                     const diff = catVal.total - catVal.translated;
                     const catTitle =
                       catKey === 'story'
-                        ? 'SECTOR 01 // STORY DATA (主线与剧情对话)'
+                        ? 'RL-ECOL-01 // STORY DATA (主线剧情与角色生态)'
                         : catKey === 'battle'
-                        ? 'SECTOR 02 // BATTLE & SKILLS (战斗机制与关键词)'
+                        ? 'RL-STRUC-02 // BATTLE & SKILLS (战斗结构力学与机制)'
                         : catKey === 'system'
-                        ? 'SECTOR 03 // RPG & SYSTEM (界面与探索系统)'
-                        : `SECTOR // ${catKey.toUpperCase()}`;
+                        ? 'RL-CTRL-03 // RPG & SYSTEM (界面总控与探索系统)'
+                        : `RL-SEC // ${catKey.toUpperCase()}`;
 
                     return (
                       <div key={catKey}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontFamily: 'var(--font-mono)', marginBottom: '6px' }}>
-                          <span style={{ color: 'var(--text-secondary)' }}>{catTitle}</span>
-                          <span style={{ color: diff > 0 ? 'var(--accent-red)' : 'var(--accent-green)' }}>
+                          <span style={{ color: 'var(--rl-text-secondary)' }}>{catTitle}</span>
+                          <span style={{ color: diff > 0 ? 'var(--rl-amber)' : 'var(--rl-mint)' }}>
                             {pct}% ({catVal.translated.toLocaleString()} / {catVal.total.toLocaleString()})
                           </span>
                         </div>
-                        <div style={{ height: '6px', background: 'var(--bg-surface)', position: 'relative' }}>
+                        <div style={{ height: '4px', background: 'rgba(15, 23, 42, 0.7)', borderRadius: '2px', overflow: 'hidden' }}>
                           <div
                             style={{
                               height: '100%',
                               width: `${pct}%`,
-                              background: diff > 0 ? 'var(--accent-tech)' : 'var(--accent-green)',
+                              background: diff > 0 ? 'var(--rl-amber)' : 'var(--rl-mint)',
                             }}
                           />
                         </div>
@@ -628,33 +652,37 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 实时自动化日志流 (Terminal Log) */}
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', padding: '20px', display: 'flex', flexDirection: 'column' }}>
+              {/* 实时科研日志总线 (Laboratory Telemetry Terminal) */}
+              <div
+                className="rl-frosted-glass"
+                style={{ background: 'var(--rl-bg-card)', border: '1px solid var(--rl-border-subtle)', borderRadius: '6px', padding: '20px', display: 'flex', flexDirection: 'column' }}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--rl-mint)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Terminal size={14} />
-                    SYSTEM EVENT STREAM
+                    LABORATORY TELEMETRY TERMINAL
                   </div>
-                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>LIVE BUS</span>
+                  <span style={{ fontSize: '10px', color: 'var(--rl-text-muted)', fontFamily: 'var(--font-mono)' }}>LIVE BUS</span>
                 </div>
                 <div
                   style={{
                     flex: 1,
-                    background: 'var(--bg-space)',
-                    border: '1px solid var(--border-ruler)',
+                    background: 'rgba(11, 18, 30, 0.85)',
+                    border: '1px solid var(--rl-border-subtle)',
+                    borderRadius: '4px',
                     padding: '12px',
                     fontSize: '11px',
                     fontFamily: 'var(--font-mono)',
-                    color: 'var(--text-secondary)',
+                    color: 'var(--rl-text-secondary)',
                     overflowY: 'auto',
                     lineHeight: '1.7',
                   }}
                 >
-                  <div style={{ color: 'var(--accent-cyan)' }}>[INF] TM Inverted Indexer loaded: {stats.tm_entries.toLocaleString()} entries online.</div>
-                  <div style={{ color: 'var(--text-muted)' }}>[INF] SQLite WAL mode active. FTS5 Trigram tokenizer verified.</div>
-                  <div style={{ color: 'var(--accent-tech)' }}>[INF] Active project segments scanned: {stats.total_segments.toLocaleString()} items.</div>
-                  <div style={{ color: 'var(--accent-green)' }}>[SEC] L01~L09 QA Gatekeepers active: Full-width tildes and illegal TMP tags blocked.</div>
-                  <div style={{ color: 'var(--text-secondary)' }}>[EVT] Bilingual workbench ready. Paging buffer: {pageSize} per page.</div>
+                  <div style={{ color: 'var(--rl-mint)' }}>[INF] Rhine Inverted TM Indexer: {stats.tm_entries.toLocaleString()} entries online.</div>
+                  <div style={{ color: 'var(--rl-text-muted)' }}>[INF] SQLite Engine: WAL mode active. FTS5 Trigram tokenizer operational.</div>
+                  <div style={{ color: 'var(--rl-amber)' }}>[INF] Active project segments scanned: {stats.total_segments.toLocaleString()} items.</div>
+                  <div style={{ color: 'var(--rl-green)' }}>[SEC] L01~L09 Quality Gatekeeper active: All tilde & TMP tags strictly audited.</div>
+                  <div style={{ color: 'var(--rl-cyan)' }}>[EVT] Bilingual workbench ready. Paging buffer: {pageSize} per page.</div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
@@ -665,14 +693,16 @@ export default function App() {
                       fetchSegments(1, 'untranslated', '');
                     }}
                     style={{
-                      background: 'var(--accent-tech)',
+                      background: 'var(--rl-amber)',
                       color: '#000',
                       border: 'none',
+                      borderRadius: '4px',
                       padding: '8px 14px',
                       fontSize: '11px',
                       fontWeight: 700,
                       fontFamily: 'var(--font-mono)',
                       cursor: 'pointer',
+                      transition: 'background 0.15s ease',
                     }}
                   >
                     ⚡ 查看并开荒 {pendingCount} 条生肉
@@ -682,9 +712,10 @@ export default function App() {
                       setActiveTab('radar');
                     }}
                     style={{
-                      background: 'transparent',
-                      color: 'var(--text-primary)',
-                      border: '1px solid var(--border-ruler)',
+                      background: 'rgba(15, 24, 39, 0.6)',
+                      color: 'var(--rl-text-primary)',
+                      border: '1px solid var(--rl-border-subtle)',
+                      borderRadius: '4px',
                       padding: '8px 14px',
                       fontSize: '11px',
                       fontFamily: 'var(--font-mono)',
@@ -700,7 +731,7 @@ export default function App() {
         )}
 
         {/* ============================================================== */}
-        {/* TAB 2: 双语对齐工作台 (Bilingual Workbench) */}
+        {/* TAB 2: 结构科双语工作台 (SEC-02: BILINGUAL WORKBENCH) */}
         {/* ============================================================== */}
         {activeTab === 'workbench' && (
           <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -709,8 +740,8 @@ export default function App() {
               style={{
                 height: '48px',
                 flexShrink: 0,
-                background: 'var(--bg-surface)',
-                borderBottom: '1px solid var(--border-ruler)',
+                background: 'var(--rl-bg-surface)',
+                borderBottom: '1px solid var(--rl-border-subtle)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -718,7 +749,7 @@ export default function App() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--rl-text-muted)' }}>
                   STAGE FILTER:
                 </span>
                 {[
@@ -736,15 +767,16 @@ export default function App() {
                         fetchSegments(1, stg.id, searchFilter);
                       }}
                       style={{
-                        background: isCur ? 'var(--bg-elevated)' : 'transparent',
-                        color: isCur ? 'var(--accent-tech)' : 'var(--text-secondary)',
+                        background: isCur ? 'var(--rl-bg-elevated)' : 'transparent',
+                        color: isCur ? 'var(--rl-mint)' : 'var(--rl-text-secondary)',
                         border: '1px solid',
-                        borderColor: isCur ? 'var(--accent-tech)' : 'var(--border-subtle)',
+                        borderColor: isCur ? 'var(--rl-border-mint)' : 'var(--rl-border-subtle)',
+                        borderRadius: '4px',
                         padding: '4px 10px',
                         fontSize: '11px',
                         fontFamily: 'var(--font-mono)',
                         cursor: 'pointer',
-                        transition: 'all 0.1s ease',
+                        transition: 'all 0.15s ease',
                       }}
                     >
                       {stg.label}
@@ -756,7 +788,7 @@ export default function App() {
               {/* 实时搜索框 */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{ position: 'relative' }}>
-                  <Search size={12} style={{ position: 'absolute', left: '8px', top: '8px', color: 'var(--text-muted)' }} />
+                  <Search size={12} style={{ position: 'absolute', left: '8px', top: '8px', color: 'var(--rl-text-muted)' }} />
                   <input
                     type="text"
                     placeholder="Search Korean, Chinese, or pointer..."
@@ -766,9 +798,10 @@ export default function App() {
                       fetchSegments(1, stageFilter, e.target.value);
                     }}
                     style={{
-                      background: 'var(--bg-card)',
-                      border: '1px solid var(--border-ruler)',
-                      color: 'var(--text-primary)',
+                      background: 'rgba(11, 18, 30, 0.8)',
+                      border: '1px solid var(--rl-border-subtle)',
+                      borderRadius: '4px',
+                      color: 'var(--rl-text-primary)',
                       padding: '4px 10px 4px 26px',
                       fontSize: '11px',
                       fontFamily: 'var(--font-mono)',
@@ -778,24 +811,26 @@ export default function App() {
                   />
                 </div>
                 {segmentsLoading && (
-                  <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--accent-tech)' }}>
+                  <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--rl-mint)' }}>
                     SCANNING...
                   </span>
                 )}
               </div>
             </div>
 
-            {/* 条目列表区域 */}
+            {/* 标本条目列表区域 */}
             <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {segmentsLoading ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)', fontSize: '13px' }}>
-                  ⚡ QUERYING REPOSITORY // 正在从 SQLite 数据库提取词条...
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--rl-mint)', fontFamily: 'var(--font-mono)', fontSize: '13px' }}>
+                  ⚡ QUERYING REPOSITORY // 正在从 SQLite 数据库提取标本...
                 </div>
               ) : segments.length === 0 ? (
                 <div
+                  className="rl-frosted-glass"
                   style={{
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border-ruler)',
+                    background: 'var(--rl-bg-card)',
+                    border: '1px solid var(--rl-border-subtle)',
+                    borderRadius: '6px',
                     padding: '40px',
                     textAlign: 'center',
                     display: 'flex',
@@ -805,10 +840,10 @@ export default function App() {
                     margin: 'auto 0',
                   }}
                 >
-                  <div style={{ fontSize: '13px', fontFamily: 'var(--font-mono)', color: 'var(--accent-gold)' }}>
+                  <div style={{ fontSize: '13px', fontFamily: 'var(--font-mono)', color: 'var(--rl-amber)' }}>
                     NO SEGMENTS MATCHED FILTER // 当前筛选条件下无匹配条目
                   </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--rl-text-secondary)', fontFamily: 'var(--font-mono)' }}>
                     阶段: [{stageFilter.toUpperCase()}] | 检索词: "{searchFilter || '*'}"
                   </div>
                   <button
@@ -818,9 +853,10 @@ export default function App() {
                       fetchSegments(1, 'all', '');
                     }}
                     style={{
-                      background: 'var(--accent-tech)',
+                      background: 'var(--rl-amber)',
                       color: '#000',
                       border: 'none',
+                      borderRadius: '4px',
                       padding: '6px 16px',
                       fontSize: '11px',
                       fontWeight: 700,
@@ -840,14 +876,16 @@ export default function App() {
                   return (
                     <div
                       key={item.id}
+                      className="rl-frosted-glass"
                       style={{
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border-subtle)',
+                        background: 'var(--rl-bg-card)',
+                        border: '1px solid var(--rl-border-subtle)',
+                        borderRadius: '6px',
                         borderLeft: hasBadTilde
-                          ? '4px solid var(--accent-red)'
+                          ? '4px solid var(--rl-coral)'
                           : item.stage === 'Reviewed'
-                          ? '4px solid var(--accent-green)'
-                          : '4px solid var(--accent-tech)',
+                          ? '4px solid var(--rl-mint)'
+                          : '4px solid var(--rl-amber)',
                         padding: '14px',
                         display: 'flex',
                         flexDirection: 'column',
@@ -857,11 +895,11 @@ export default function App() {
                       {/* 条目技术元数据栏 */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ color: 'var(--accent-cyan)' }}>#{item.id}</span>
-                          <span style={{ color: 'var(--text-primary)' }}>{item.relative_path}</span>
-                          <span style={{ color: 'var(--text-muted)' }}>{item.key_path}</span>
+                          <span style={{ color: 'var(--rl-mint)', fontWeight: 600 }}>#{item.id}</span>
+                          <span style={{ color: 'var(--rl-text-primary)' }}>{item.relative_path}</span>
+                          <span style={{ color: 'var(--rl-text-muted)' }}>{item.key_path}</span>
                           {item.speaker && (
-                            <span style={{ background: 'var(--bg-elevated)', color: 'var(--accent-gold)', padding: '1px 6px', fontSize: '10px' }}>
+                            <span style={{ background: 'var(--rl-bg-elevated)', color: 'var(--rl-amber)', padding: '1px 6px', fontSize: '10px', borderRadius: '2px' }}>
                               {item.speaker}
                             </span>
                           )}
@@ -872,15 +910,17 @@ export default function App() {
                             style={{
                               fontSize: '10px',
                               fontFamily: 'var(--font-mono)',
-                              padding: '2px 6px',
-                              background: item.stage === 'Reviewed' ? 'rgba(46,229,132,0.15)' : 'rgba(252,238,10,0.15)',
-                              color: item.stage === 'Reviewed' ? 'var(--accent-green)' : 'var(--accent-tech)',
+                              padding: '2px 8px',
+                              borderRadius: '3px',
+                              background: item.stage === 'Reviewed' ? 'rgba(45,212,191,0.12)' : 'rgba(245,158,11,0.12)',
+                              color: item.stage === 'Reviewed' ? 'var(--rl-mint)' : 'var(--rl-amber)',
+                              border: `1px solid ${item.stage === 'Reviewed' ? 'rgba(45,212,191,0.25)' : 'rgba(245,158,11,0.25)'}`,
                             }}
                           >
                             {item.stage}
                           </span>
                           {hasBadTilde && (
-                            <span style={{ fontSize: '10px', background: 'var(--accent-red)', color: '#fff', padding: '2px 6px', fontFamily: 'var(--font-mono)' }}>
+                            <span style={{ fontSize: '10px', background: 'rgba(248,113,113,0.18)', color: 'var(--rl-coral)', border: '1px solid var(--rl-coral)', padding: '2px 8px', borderRadius: '3px', fontFamily: 'var(--font-mono)' }}>
                               L02 FATAL: 全角波浪号
                             </span>
                           )}
@@ -890,7 +930,7 @@ export default function App() {
                       {/* 中韩双语对照编辑网格 */}
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                         {/* 左：韩文原版生肉 */}
-                        <div style={{ background: 'var(--bg-surface)', padding: '10px', border: '1px solid var(--border-subtle)', fontSize: '13px', lineHeight: '1.6', color: 'var(--text-secondary)' }}>
+                        <div style={{ background: 'rgba(11, 18, 30, 0.6)', padding: '10px 12px', borderRadius: '4px', border: '1px solid var(--rl-border-subtle)', fontSize: '13px', lineHeight: '1.6', color: 'var(--rl-text-secondary)' }}>
                           {item.source_kr}
                         </div>
 
@@ -905,16 +945,18 @@ export default function App() {
                             rows={3}
                             style={{
                               width: '100%',
-                              background: 'var(--bg-surface)',
+                              background: 'rgba(11, 18, 30, 0.85)',
                               border: '1px solid',
-                              borderColor: hasBadTilde ? 'var(--accent-red)' : 'var(--border-ruler)',
-                              color: 'var(--text-primary)',
+                              borderColor: hasBadTilde ? 'var(--rl-coral)' : 'var(--rl-border-subtle)',
+                              borderRadius: '4px',
+                              color: 'var(--rl-text-primary)',
                               padding: '10px',
                               fontSize: '13px',
                               lineHeight: '1.6',
                               fontFamily: 'var(--font-sans)',
                               outline: 'none',
                               resize: 'vertical',
+                              transition: 'border-color 0.15s ease',
                             }}
                           />
 
@@ -926,8 +968,9 @@ export default function App() {
                                   onClick={() => handleAutoFix(item)}
                                   style={{
                                     background: 'transparent',
-                                    border: '1px solid var(--accent-red)',
-                                    color: 'var(--accent-red)',
+                                    border: '1px solid var(--rl-coral)',
+                                    color: 'var(--rl-coral)',
+                                    borderRadius: '3px',
                                     fontSize: '10px',
                                     fontFamily: 'var(--font-mono)',
                                     padding: '2px 8px',
@@ -943,9 +986,10 @@ export default function App() {
                               onClick={() => handleSaveTranslation(item, draftText)}
                               disabled={savingId === item.id}
                               style={{
-                                background: hasBadTilde ? 'var(--border-ruler)' : 'var(--accent-tech)',
+                                background: hasBadTilde ? 'var(--rl-border-subtle)' : 'var(--rl-amber)',
                                 color: '#000',
                                 border: 'none',
+                                borderRadius: '4px',
                                 padding: '4px 14px',
                                 fontSize: '11px',
                                 fontWeight: 700,
@@ -954,6 +998,7 @@ export default function App() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '6px',
+                                transition: 'opacity 0.15s ease',
                               }}
                             >
                               <Lock size={11} />
@@ -973,8 +1018,8 @@ export default function App() {
               style={{
                 height: '42px',
                 flexShrink: 0,
-                background: 'var(--bg-surface)',
-                borderTop: '1px solid var(--border-ruler)',
+                background: 'var(--rl-bg-surface)',
+                borderTop: '1px solid var(--rl-border-subtle)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -983,9 +1028,9 @@ export default function App() {
                 fontFamily: 'var(--font-mono)',
               }}
             >
-              <div style={{ color: 'var(--text-muted)' }}>
+              <div style={{ color: 'var(--rl-text-muted)' }}>
                 SHOWING {totalSegments === 0 ? 0 : (page - 1) * pageSize + 1} -{' '}
-                {Math.min(page * pageSize, totalSegments)} OF {totalSegments.toLocaleString()} SEGMENTS
+                {Math.min(page * pageSize, totalSegments)} OF {totalSegments.toLocaleString()} SPECIMENS
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -993,25 +1038,27 @@ export default function App() {
                   onClick={() => fetchSegments(Math.max(1, page - 1), stageFilter, searchFilter)}
                   disabled={page <= 1}
                   style={{
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border-ruler)',
-                    color: page <= 1 ? 'var(--text-muted)' : 'var(--text-primary)',
+                    background: 'var(--rl-bg-card)',
+                    border: '1px solid var(--rl-border-subtle)',
+                    borderRadius: '3px',
+                    color: page <= 1 ? 'var(--rl-text-muted)' : 'var(--rl-text-primary)',
                     padding: '3px 10px',
                     cursor: page <= 1 ? 'not-allowed' : 'pointer',
                   }}
                 >
                   ◄ PREV
                 </button>
-                <span style={{ color: 'var(--accent-tech)' }}>
+                <span style={{ color: 'var(--rl-mint)', fontWeight: 600 }}>
                   PAGE {page} / {totalPages}
                 </span>
                 <button
                   onClick={() => fetchSegments(Math.min(totalPages, page + 1), stageFilter, searchFilter)}
                   disabled={page >= totalPages}
                   style={{
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border-ruler)',
-                    color: page >= totalPages ? 'var(--text-muted)' : 'var(--text-primary)',
+                    background: 'var(--rl-bg-card)',
+                    border: '1px solid var(--rl-border-subtle)',
+                    borderRadius: '3px',
+                    color: page >= totalPages ? 'var(--rl-text-muted)' : 'var(--rl-text-primary)',
                     padding: '3px 10px',
                     cursor: page >= totalPages ? 'not-allowed' : 'pointer',
                   }}
@@ -1024,14 +1071,17 @@ export default function App() {
         )}
 
         {/* ============================================================== */}
-        {/* TAB 3: 反向台词雷达 (Reverse Finder) */}
+        {/* TAB 3: 应用科台词雷达 (SEC-03: SCRIPT RADAR) */}
         {/* ============================================================== */}
         {activeTab === 'radar' && (
           <div style={{ flex: 1, minHeight: 0, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '16px', overflow: 'hidden' }}>
             {/* 搜索控制台 */}
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', padding: '16px', flexShrink: 0 }}>
-              <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--accent-cyan)', marginBottom: '8px' }}>
-                REVERSE IN-GAME SCRIPT FINDER // 毫秒级双擎实机台词雷达 (支持项目词条 + 30 万 TM 记忆库)
+            <div
+              className="rl-frosted-glass"
+              style={{ background: 'var(--rl-bg-card)', border: '1px solid var(--rl-border-subtle)', borderRadius: '6px', padding: '16px', flexShrink: 0 }}
+            >
+              <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--rl-mint)', marginBottom: '8px' }}>
+                APPLICATION RADAR // 双擎实机台词反查 (穿透检索项目词条与 30 万 TM 记忆库)
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <input
@@ -1044,9 +1094,10 @@ export default function App() {
                   }}
                   style={{
                     flex: 1,
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border-ruler)',
-                    color: 'var(--text-primary)',
+                    background: 'rgba(11, 18, 30, 0.85)',
+                    border: '1px solid var(--rl-border-subtle)',
+                    borderRadius: '4px',
+                    color: 'var(--rl-text-primary)',
                     padding: '8px 12px',
                     fontSize: '13px',
                     fontFamily: 'var(--font-mono)',
@@ -1056,9 +1107,10 @@ export default function App() {
                 <button
                   onClick={() => executeRadarSearch(radarQuery)}
                   style={{
-                    background: 'var(--accent-tech)',
+                    background: 'var(--rl-amber)',
                     color: '#000',
                     border: 'none',
+                    borderRadius: '4px',
                     padding: '0 20px',
                     fontSize: '12px',
                     fontWeight: 700,
@@ -1072,7 +1124,7 @@ export default function App() {
 
               {/* 快捷检索标签 */}
               <div style={{ display: 'flex', gap: '8px', marginTop: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>QUICK TAGS:</span>
+                <span style={{ fontSize: '10px', color: 'var(--rl-text-muted)', fontFamily: 'var(--font-mono)' }}>QUICK TAGS:</span>
                 {['身体能力衰退', '계약', '균열', '호흡', '뫼르소', '단테', '거울 조각'].map((tag) => (
                   <button
                     key={tag}
@@ -1081,9 +1133,10 @@ export default function App() {
                       executeRadarSearch(tag);
                     }}
                     style={{
-                      background: 'var(--bg-surface)',
-                      border: '1px solid var(--border-subtle)',
-                      color: 'var(--text-secondary)',
+                      background: 'rgba(15, 24, 39, 0.6)',
+                      border: '1px solid var(--rl-border-subtle)',
+                      borderRadius: '3px',
+                      color: 'var(--rl-text-secondary)',
                       padding: '2px 8px',
                       fontSize: '10px',
                       fontFamily: 'var(--font-mono)',
@@ -1098,26 +1151,28 @@ export default function App() {
 
             {/* 检索状态小标头 */}
             {radarResults.query && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', flexShrink: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--rl-text-muted)', flexShrink: 0 }}>
                 <span>
                   QUERY: "{radarResults.query}" // FOUND {radarResults.total_found} MATCHES (
                   {radarResults.tm_entries.length} TM ENTRIES, {radarResults.segments.length} PROJECT SEGMENTS)
                 </span>
-                <span style={{ color: 'var(--accent-cyan)' }}>LATENCY: {radarDuration}ms</span>
+                <span style={{ color: 'var(--rl-mint)' }}>LATENCY: {radarDuration}ms</span>
               </div>
             )}
 
             {/* 检索结果展示表 (允许独立纵向滚动) */}
             <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {radarLoading ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)' }}>
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--rl-mint)', fontFamily: 'var(--font-mono)' }}>
                   ⚡ 雷达正在高速反查 FTS5 倒排索引...
                 </div>
               ) : radarResults.total_found === 0 ? (
                 <div
+                  className="rl-frosted-glass"
                   style={{
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border-ruler)',
+                    background: 'var(--rl-bg-card)',
+                    border: '1px solid var(--rl-border-subtle)',
+                    borderRadius: '6px',
                     padding: '30px',
                     textAlign: 'center',
                     display: 'flex',
@@ -1126,10 +1181,10 @@ export default function App() {
                     gap: '8px',
                   }}
                 >
-                  <div style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', color: 'var(--accent-gold)' }}>
+                  <div style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', color: 'var(--rl-amber)' }}>
                     NO ENTRIES FOUND IN TM OR PROJECT DATABASE
                   </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--rl-text-secondary)', fontFamily: 'var(--font-mono)' }}>
                     未能检索到与 "{radarQuery}" 匹配的条目。建议使用上方快捷标签或尝试输入更短的词根。
                   </div>
                 </div>
@@ -1139,10 +1194,12 @@ export default function App() {
                   {radarResults.segments.map((item, idx) => (
                     <div
                       key={`seg-${idx}`}
+                      className="rl-frosted-glass"
                       style={{
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border-subtle)',
-                        borderLeft: '4px solid var(--accent-tech)',
+                        background: 'var(--rl-bg-card)',
+                        border: '1px solid var(--rl-border-subtle)',
+                        borderRadius: '6px',
+                        borderLeft: '4px solid var(--rl-amber)',
                         padding: '12px 16px',
                         display: 'flex',
                         flexDirection: 'column',
@@ -1151,20 +1208,20 @@ export default function App() {
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
                         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                          <span style={{ background: 'var(--accent-tech)', color: '#000', padding: '1px 6px', fontWeight: 700 }}>
-                            PROJECT SEGMENT
+                          <span style={{ background: 'var(--rl-amber)', color: '#000', padding: '1px 6px', borderRadius: '2px', fontWeight: 700 }}>
+                            PROJECT SPECIMEN
                           </span>
-                          <span style={{ color: 'var(--text-primary)' }}>{item.relative_path}</span>
-                          <span style={{ color: 'var(--text-muted)' }}>{item.key_path}</span>
+                          <span style={{ color: 'var(--rl-text-primary)' }}>{item.relative_path}</span>
+                          <span style={{ color: 'var(--rl-text-muted)' }}>{item.key_path}</span>
                         </div>
-                        {item.speaker && <span style={{ color: 'var(--accent-gold)' }}>SPEAKER: {item.speaker}</span>}
+                        {item.speaker && <span style={{ color: 'var(--rl-amber)' }}>SPEAKER: {item.speaker}</span>}
                       </div>
 
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginTop: '4px' }}>
-                        <div style={{ background: 'var(--bg-surface)', padding: '8px 12px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                        <div style={{ background: 'rgba(11, 18, 30, 0.6)', padding: '8px 12px', borderRadius: '4px', fontSize: '12px', color: 'var(--rl-text-secondary)', lineHeight: '1.5' }}>
                           {item.source_kr}
                         </div>
-                        <div style={{ background: 'var(--bg-surface)', padding: '8px 12px', fontSize: '12px', color: 'var(--text-primary)', lineHeight: '1.5' }}>
+                        <div style={{ background: 'rgba(11, 18, 30, 0.6)', padding: '8px 12px', borderRadius: '4px', fontSize: '12px', color: 'var(--rl-text-primary)', lineHeight: '1.5' }}>
                           {item.target_zh || '<未翻译>'}
                         </div>
                       </div>
@@ -1175,10 +1232,12 @@ export default function App() {
                   {radarResults.tm_entries.map((item, idx) => (
                     <div
                       key={`tm-${idx}`}
+                      className="rl-frosted-glass"
                       style={{
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border-subtle)',
-                        borderLeft: '4px solid var(--accent-cyan)',
+                        background: 'var(--rl-bg-card)',
+                        border: '1px solid var(--rl-border-subtle)',
+                        borderRadius: '6px',
+                        borderLeft: '4px solid var(--rl-mint)',
                         padding: '12px 16px',
                         display: 'flex',
                         flexDirection: 'column',
@@ -1187,20 +1246,20 @@ export default function App() {
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
                         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                          <span style={{ background: 'var(--accent-cyan)', color: '#000', padding: '1px 6px', fontWeight: 700 }}>
+                          <span style={{ background: 'rgba(45,212,191,0.15)', color: 'var(--rl-mint)', border: '1px solid var(--rl-border-mint)', padding: '1px 6px', borderRadius: '2px', fontWeight: 600 }}>
                             TM MEMORY ({item.source_origin})
                           </span>
-                          <span style={{ color: 'var(--text-muted)' }}>SCOPE: {item.file_scope || '*'}</span>
-                          <span style={{ color: 'var(--accent-gold)' }}>WEIGHT: {item.priority}</span>
+                          <span style={{ color: 'var(--rl-text-muted)' }}>SCOPE: {item.file_scope || '*'}</span>
+                          <span style={{ color: 'var(--rl-amber)' }}>WEIGHT: {item.priority}</span>
                         </div>
-                        {item.speaker && <span style={{ color: 'var(--accent-cyan)' }}>SPEAKER: {item.speaker}</span>}
+                        {item.speaker && <span style={{ color: 'var(--rl-mint)' }}>SPEAKER: {item.speaker}</span>}
                       </div>
 
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginTop: '4px' }}>
-                        <div style={{ background: 'var(--bg-surface)', padding: '8px 12px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                        <div style={{ background: 'rgba(11, 18, 30, 0.6)', padding: '8px 12px', borderRadius: '4px', fontSize: '12px', color: 'var(--rl-text-secondary)', lineHeight: '1.5' }}>
                           {item.source_kr}
                         </div>
-                        <div style={{ background: 'var(--bg-surface)', padding: '8px 12px', fontSize: '12px', color: 'var(--text-primary)', lineHeight: '1.5', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div style={{ background: 'rgba(11, 18, 30, 0.6)', padding: '8px 12px', borderRadius: '4px', fontSize: '12px', color: 'var(--rl-text-primary)', lineHeight: '1.5', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <span>{item.target_zh}</span>
                           <button
                             onClick={() => {
@@ -1208,7 +1267,7 @@ export default function App() {
                               showNotification('✓ 译文已复制到剪贴板');
                             }}
                             title="复制译文"
-                            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px' }}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--rl-text-muted)', cursor: 'pointer', padding: '2px' }}
                           >
                             <Copy size={12} />
                           </button>
@@ -1223,36 +1282,38 @@ export default function App() {
         )}
 
         {/* ============================================================== */}
-        {/* TAB 4: 重点裁决箱 (Focus Box) */}
+        {/* TAB 4: 防卫科重点裁决箱 (SEC-04: FOCUS DECISION) */}
         {/* ============================================================== */}
         {activeTab === 'focus' && (
           <div style={{ flex: 1, minHeight: 0, padding: '20px 40px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', overflowY: 'auto' }}>
             <div
+              className="rl-frosted-glass"
               style={{
                 width: '100%',
                 maxWidth: '850px',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border-ruler)',
+                background: 'var(--rl-bg-card)',
+                border: '1px solid var(--rl-border-subtle)',
+                borderRadius: '8px',
                 padding: '24px',
-                boxShadow: '0 12px 32px rgba(0,0,0,0.8)',
+                boxShadow: '0 16px 36px rgba(0,0,0,0.6)',
                 position: 'relative',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '10px', marginBottom: '16px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--accent-tech)' }}>
-                  HUMAN FOCUS DECISION BOX // 存疑/生肉高精快速裁决台
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--rl-border-subtle)', paddingBottom: '10px', marginBottom: '16px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--rl-mint)' }}>
+                  FOCUS DECISION BOX // 存疑标本快速裁决台
                 </span>
-                <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--rl-text-muted)' }}>
                   DECISION #{focusIndex + 1} OF {Math.max(focusItems.length, 1)}
                 </span>
               </div>
 
               {focusLoading ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)' }}>
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--rl-mint)', fontFamily: 'var(--font-mono)' }}>
                   ⚡ 正在加载生肉裁决队列...
                 </div>
               ) : focusItems.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--accent-green)', fontFamily: 'var(--font-mono)' }}>
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--rl-green)', fontFamily: 'var(--font-mono)' }}>
                   🎉 当前工作区无待裁决生肉！全部词条均已完成翻译。
                 </div>
               ) : (
@@ -1263,17 +1324,17 @@ export default function App() {
 
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-                        <span>FILE: {cur.relative_path} | KEY: {cur.key_path}</span>
-                        {cur.speaker && <span style={{ color: 'var(--accent-gold)' }}>SPEAKER: {cur.speaker}</span>}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--rl-text-muted)' }}>
+                        <span>SPECIMEN: {cur.relative_path} | KEY: {cur.key_path}</span>
+                        {cur.speaker && <span style={{ color: 'var(--rl-amber)' }}>SPEAKER: {cur.speaker}</span>}
                       </div>
 
                       {/* 韩文原句大字展示 */}
                       <div>
-                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginBottom: '4px' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--rl-text-muted)', fontFamily: 'var(--font-mono)', marginBottom: '4px' }}>
                           SOURCE KOREAN (原文)
                         </div>
-                        <div style={{ background: 'var(--bg-surface)', padding: '14px', fontSize: '15px', lineHeight: '1.6', color: 'var(--text-secondary)' }}>
+                        <div style={{ background: 'rgba(11, 18, 30, 0.6)', padding: '14px', borderRadius: '4px', fontSize: '15px', lineHeight: '1.6', color: 'var(--rl-text-secondary)', border: '1px solid var(--rl-border-subtle)' }}>
                           {cur.source_kr}
                         </div>
                       </div>
@@ -1281,7 +1342,7 @@ export default function App() {
                       {/* 中文译文大字编辑 */}
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                          <span style={{ fontSize: '10px', color: 'var(--accent-tech)', fontFamily: 'var(--font-mono)' }}>
+                          <span style={{ fontSize: '10px', color: 'var(--rl-mint)', fontFamily: 'var(--font-mono)' }}>
                             TARGET CHINESE (裁决译文)
                           </span>
                           {hasBadTilde && (
@@ -1289,8 +1350,9 @@ export default function App() {
                               onClick={() => handleAutoFix(cur)}
                               style={{
                                 background: 'transparent',
-                                border: '1px solid var(--accent-red)',
-                                color: 'var(--accent-red)',
+                                border: '1px solid var(--rl-coral)',
+                                color: 'var(--rl-coral)',
+                                borderRadius: '3px',
                                 fontSize: '10px',
                                 fontFamily: 'var(--font-mono)',
                                 padding: '1px 6px',
@@ -1313,10 +1375,11 @@ export default function App() {
                           placeholder="在此输入裁决译文 (按 Ctrl+Enter 提交并自动切换至下一条)..."
                           style={{
                             width: '100%',
-                            background: 'var(--bg-surface)',
+                            background: 'rgba(11, 18, 30, 0.85)',
                             border: '1px solid',
-                            borderColor: hasBadTilde ? 'var(--accent-red)' : 'var(--accent-tech)',
-                            color: 'var(--text-primary)',
+                            borderColor: hasBadTilde ? 'var(--rl-coral)' : 'var(--rl-border-mint)',
+                            borderRadius: '4px',
+                            color: 'var(--rl-text-primary)',
                             padding: '12px',
                             fontSize: '14px',
                             lineHeight: '1.6',
@@ -1333,9 +1396,10 @@ export default function App() {
                             onClick={() => setFocusIndex(Math.max(0, focusIndex - 1))}
                             disabled={focusIndex === 0}
                             style={{
-                              background: 'transparent',
-                              border: '1px solid var(--border-ruler)',
-                              color: 'var(--text-secondary)',
+                              background: 'rgba(15, 24, 39, 0.6)',
+                              border: '1px solid var(--rl-border-subtle)',
+                              borderRadius: '4px',
+                              color: 'var(--rl-text-secondary)',
                               padding: '6px 12px',
                               fontSize: '11px',
                               fontFamily: 'var(--font-mono)',
@@ -1348,9 +1412,10 @@ export default function App() {
                             onClick={() => setFocusIndex(Math.min(focusItems.length - 1, focusIndex + 1))}
                             disabled={focusIndex >= focusItems.length - 1}
                             style={{
-                              background: 'transparent',
-                              border: '1px solid var(--border-ruler)',
-                              color: 'var(--text-secondary)',
+                              background: 'rgba(15, 24, 39, 0.6)',
+                              border: '1px solid var(--rl-border-subtle)',
+                              borderRadius: '4px',
+                              color: 'var(--rl-text-secondary)',
                               padding: '6px 12px',
                               fontSize: '11px',
                               fontFamily: 'var(--font-mono)',
@@ -1365,9 +1430,10 @@ export default function App() {
                           onClick={() => handleSaveTranslation(cur, curText, true)}
                           disabled={savingId === cur.id || hasBadTilde}
                           style={{
-                            background: hasBadTilde ? 'var(--border-ruler)' : 'var(--accent-tech)',
+                            background: hasBadTilde ? 'var(--rl-border-subtle)' : 'var(--rl-amber)',
                             color: '#000',
                             border: 'none',
+                            borderRadius: '4px',
                             padding: '6px 20px',
                             fontSize: '12px',
                             fontWeight: 700,
