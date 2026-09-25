@@ -21,6 +21,8 @@ import {
   Copy,
   Sparkles,
   Lock,
+  ArrowRight,
+  CornerDownLeft,
 } from 'lucide-react';
 
 interface SegmentItem {
@@ -34,7 +36,7 @@ interface SegmentItem {
   target_zh?: string;
   speaker?: string;
   context_info?: string;
-  stage: 'Untranslated' | 'TmExact' | 'OutdatedDiff' | 'AiDrafted' | 'Reviewed' | 'UpstreamFrozen';
+  stage: string;
   qa_passed: boolean;
   qa_issues?: string;
   updated_at: string;
@@ -50,6 +52,17 @@ interface ProjectStats {
   stages: Record<string, number>;
 }
 
+interface SearchSegmentItem {
+  segment_id: number;
+  file_id: number;
+  relative_path: string;
+  key_path: string;
+  source_kr: string;
+  target_zh?: string;
+  speaker?: string;
+  stage: string;
+}
+
 interface TMSearchResult {
   id: number;
   hash_kr: string;
@@ -61,42 +74,61 @@ interface TMSearchResult {
   priority: number;
 }
 
+interface DualSearchResults {
+  query: string;
+  segments: SearchSegmentItem[];
+  tm_entries: TMSearchResult[];
+  total_found: number;
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<'observatory' | 'workbench' | 'radar' | 'focus'>('observatory');
 
-  // 后端动态数据
+  // 后端动态态势大盘数据
   const [stats, setStats] = useState<ProjectStats>({
     total_files: 2022,
     total_segments: 144181,
-    translated_segments: 143843,
-    reviewed_segments: 143843,
-    tm_entries: 143860,
+    translated_segments: 143881,
+    reviewed_segments: 143881,
+    tm_entries: 302528,
     categories: {
-      story: { total: 45210, translated: 45210 },
-      battle: { total: 38920, translated: 38920 },
-      system: { total: 47303, translated: 47303 },
-      abnormality: { total: 12748, translated: 12410 },
+      story: { total: 68117, translated: 68094 },
+      battle: { total: 28107, translated: 28106 },
+      system: { total: 47957, translated: 47681 },
     },
-    stages: { '0': 338, '4': 143843 },
+    stages: { '0': 300, '1': 38, '4': 143843 },
   });
 
+  // 工作台状态
   const [segments, setSegments] = useState<SegmentItem[]>([]);
   const [totalSegments, setTotalSegments] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(25);
   const [stageFilter, setStageFilter] = useState<string>('all');
   const [searchFilter, setSearchFilter] = useState('');
+  const [segmentsLoading, setSegmentsLoading] = useState(false);
   const [editingTranslations, setEditingTranslations] = useState<Record<number, string>>({});
   const [savingId, setSavingId] = useState<number | null>(null);
 
   // 反向雷达检索状态
-  const [radarQuery, setRadarQuery] = useState('契约');
-  const [radarResults, setRadarResults] = useState<TMSearchResult[]>([]);
+  const [radarQuery, setRadarQuery] = useState('身体能力衰退');
+  const [radarResults, setRadarResults] = useState<DualSearchResults>({
+    query: '',
+    segments: [],
+    tm_entries: [],
+    total_found: 0,
+  });
   const [radarLoading, setRadarLoading] = useState(false);
+  const [radarDuration, setRadarDuration] = useState<number>(0);
 
-  // 重点裁决箱当前索引
+  // 重点裁决箱专用生肉队列
+  const [focusItems, setFocusItems] = useState<SegmentItem[]>([]);
   const [focusIndex, setFocusIndex] = useState(0);
+  const [focusLoading, setFocusLoading] = useState(false);
+
+  // 全局通知与同步态
   const [notification, setNotification] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const showNotification = (msg: string) => {
     setNotification(msg);
@@ -113,13 +145,14 @@ export default function App() {
           setStats(data.stats);
         }
       }
-    } catch {
-      // 本地预览模式保留默认高仿真数据
+    } catch (e) {
+      console.warn('API status fetch failed, using cached state', e);
     }
   };
 
-  // 2. 拉取工作台词条列表
+  // 2. 拉取工作台词条列表 (带状态过滤与分页)
   const fetchSegments = async (p = 1, stg = stageFilter, q = searchFilter) => {
+    setSegmentsLoading(true);
     try {
       const params = new URLSearchParams();
       params.set('page', p.toString());
@@ -144,117 +177,56 @@ export default function App() {
         setTotalSegments(data.total || 0);
         setPage(data.page || 1);
       }
-    } catch {
-      // 离线/模拟后备数据
-      setSegments([
-        {
-          id: 201,
-          project_id: 'limbus-active',
-          file_id: 1,
-          relative_path: 'AbEvents-a1c8p2.json',
-          key_path: '/dataList/0/title',
-          source_kr: '막힌_길_장치_조작',
-          target_zh: '',
-          stage: 'Untranslated',
-          qa_passed: true,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          id: 202,
-          project_id: 'limbus-active',
-          file_id: 1,
-          relative_path: 'AbEvents-a1c8p2.json',
-          key_path: '/dataList/1/title',
-          source_kr: '낭떠러지_도전',
-          target_zh: '',
-          stage: 'Untranslated',
-          qa_passed: true,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          id: 203,
-          project_id: 'limbus-active',
-          file_id: 1,
-          relative_path: 'AbEvents-a1c8p2.json',
-          key_path: '/dataList/2/title',
-          source_kr: '죄인_벌주기_1차',
-          target_zh: '',
-          stage: 'Untranslated',
-          qa_passed: true,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          id: 101,
-          project_id: 'limbus-active',
-          file_id: 2,
-          relative_path: 'StoryData/S1029B.json',
-          key_path: '/dataList/12/content',
-          source_kr: '균열이 마침내 완전히 찢어지고, 푸이였을 존재가 그 틈새에서 모습을 드러낸다.',
-          target_zh: '裂隙终于彻底撕裂，本应是普伊的存在从中缓缓走出。',
-          speaker: '旁白',
-          stage: 'Reviewed',
-          qa_passed: true,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          id: 102,
-          project_id: 'limbus-active',
-          file_id: 3,
-          relative_path: 'Skills/BattleKeywords.json',
-          key_path: '/dataList/0/desc',
-          source_kr: '체력이 25% 이하일 때, 3턴 동안 피해량 50% 증가 및 [호흡] 2단계 획득',
-          target_zh: '体力在25%以下时，在3回合内伤害量增加50%并自身获得2层[呼吸法] 状态',
-          speaker: '技能机制',
-          stage: 'TmExact',
-          qa_passed: true,
-          updated_at: new Date().toISOString(),
-        },
-      ]);
-      setTotalSegments(338);
+    } catch (e) {
+      console.warn('Failed to fetch segments from server', e);
+    } finally {
+      setSegmentsLoading(false);
     }
   };
 
-  // 3. 执行反向雷达搜索
+  // 3. 拉取重点裁决箱生肉条目 (专门拉取 stage=0 的待译生肉)
+  const fetchFocusItems = async () => {
+    setFocusLoading(true);
+    try {
+      const res = await fetch('/api/segments?stage=0&page=1&page_size=100');
+      if (res.ok) {
+        const data = await res.json();
+        setFocusItems(data.items || []);
+        setFocusIndex(0);
+      }
+    } catch (e) {
+      console.warn('Failed to fetch focus items', e);
+    } finally {
+      setFocusLoading(false);
+    }
+  };
+
+  // 4. 执行反向雷达双擎搜索 (同时检索当前项目词条与 30 万 TM 记忆库)
   const executeRadarSearch = async (query: string) => {
     if (!query.trim()) return;
     setRadarLoading(true);
+    const start = performance.now();
     try {
-      const res = await fetch(`/api/tm/search?q=${encodeURIComponent(query.trim())}&limit=25`);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}&limit=50`);
       if (res.ok) {
         const data = await res.json();
-        setRadarResults(data.results || []);
+        setRadarResults({
+          query: data.query || query,
+          segments: data.segments || [],
+          tm_entries: data.tm_entries || [],
+          total_found: data.total_found ?? ((data.segments?.length || 0) + (data.tm_entries?.length || 0)),
+        });
       }
-    } catch {
-      // 模拟离线结果
-      setRadarResults([
-        {
-          id: 1,
-          hash_kr: 'hash_1',
-          source_kr: '…끊어진 것은 관리자님과의 계약일뿐, 림버스 컴퍼니와의 계약 조항이 효력을 잃은 것은 아니다.',
-          target_zh: '……被斩断的只是和经理的契约，和边狱公司的合同条款并未失去效力。',
-          file_scope: 'StoryData/S949B.json',
-          speaker: '뫼르소 (默尔索)',
-          source_origin: 'zero-assoc-20260921',
-          priority: 100,
-        },
-        {
-          id: 2,
-          hash_kr: 'hash_2',
-          source_kr: '<그래, 계약은… 분명 지켜질 거야.>',
-          target_zh: '<嗯，契约……一定会履行的。>',
-          file_scope: 'StoryData/S925B.json',
-          speaker: '단테 (但丁)',
-          source_origin: 'zero-assoc-20260921',
-          priority: 100,
-        },
-      ]);
+    } catch (e) {
+      console.warn('Radar search failed', e);
     } finally {
+      setRadarDuration(Math.round((performance.now() - start) * 10) / 10);
       setRadarLoading(false);
     }
   };
 
-  // 4. 保存译文并执行行内门禁检查
-  const handleSaveTranslation = async (item: SegmentItem, newText: string) => {
+  // 5. 保存译文并执行行内门禁检查
+  const handleSaveTranslation = async (item: SegmentItem, newText: string, isFocus = false) => {
     setSavingId(item.id);
     try {
       const res = await fetch('/api/segments/update', {
@@ -263,7 +235,7 @@ export default function App() {
         body: JSON.stringify({
           id: item.id,
           target_zh: newText,
-          stage: 4, // 标记为 Reviewed
+          stage: 4, // 晋升为 Reviewed 状态
         }),
       });
       if (res.ok) {
@@ -281,20 +253,25 @@ export default function App() {
               : s
           )
         );
-        showNotification(`✓ 条目 #${item.id} 已保存并锁定`);
+        showNotification(`✓ 条目 #${item.id} 已持久化保存并锁定`);
+
+        // 如果在裁决箱中，自动步进至下一项
+        if (isFocus && focusItems.length > 0) {
+          if (focusIndex < focusItems.length - 1) {
+            setFocusIndex(focusIndex + 1);
+          } else {
+            showNotification('🎉 当前批次存疑条目已全部裁决完毕！');
+          }
+        }
       }
-    } catch {
-      // 离线更新
-      setSegments((prev) =>
-        prev.map((s) => (s.id === item.id ? { ...s, target_zh: newText, stage: 'Reviewed' } : s))
-      );
-      showNotification(`✓ [模拟] 条目 #${item.id} 已更新`);
+    } catch (e) {
+      showNotification(`🚨 保存失败: ${e}`);
     } finally {
       setSavingId(null);
     }
   };
 
-  // 5. 自动一键安全修复 (波浪号与关键词空格)
+  // 6. 自动一键确定性安全修复 (波浪号与关键词空格)
   const handleAutoFix = async (item: SegmentItem) => {
     const curText = editingTranslations[item.id] ?? item.target_zh ?? '';
     try {
@@ -306,10 +283,9 @@ export default function App() {
       if (res.ok) {
         const data = await res.json();
         setEditingTranslations((prev) => ({ ...prev, [item.id]: data.fixed }));
-        showNotification('✓ 确定性安全自愈完成 (全角波浪号已纠正 + 关键词空格已补齐)');
+        showNotification('✓ 确定性自愈完成 (全角波浪号已纠正为半角 + 关键词空格已补齐)');
       }
     } catch {
-      // 本地简易修复规则
       const fixed = curText
         .replace(/～|〜/g, '~')
         .replace(/\[([^\]]+)\](?!\s)/g, '[$1] ');
@@ -318,31 +294,42 @@ export default function App() {
     }
   };
 
+  // 全量同步刷新
+  const handleSyncAll = async () => {
+    setIsSyncing(true);
+    await Promise.all([fetchStatus(), fetchSegments(page, stageFilter, searchFilter)]);
+    showNotification('🚀 态势大盘与本地词条缓存已全量同步刷新');
+    setIsSyncing(false);
+  };
+
   useEffect(() => {
     fetchStatus();
-    fetchSegments(1, stageFilter, searchFilter);
-    executeRadarSearch(radarQuery);
+    fetchSegments(1, 'all', '');
+    executeRadarSearch('身体能力衰退');
+    fetchFocusItems();
   }, []);
 
+  const totalPages = Math.max(1, Math.ceil(totalSegments / pageSize));
   const completionPercent = ((stats.translated_segments / Math.max(stats.total_segments, 1)) * 100).toFixed(2);
   const pendingCount = stats.total_segments - stats.translated_segments;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-space)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-space)', overflow: 'hidden' }}>
       {/* 顶部终末地工业级技术标头 (Tactical Header) */}
       <header
         style={{
           height: '56px',
+          flexShrink: 0,
           background: 'var(--bg-surface)',
           borderBottom: '1px solid var(--border-ruler)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 24px',
-          zIndex: 10,
+          padding: '0 20px',
+          zIndex: 20,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           {/* LCT 品牌标志徽标 */}
           <div
             style={{
@@ -352,7 +339,7 @@ export default function App() {
               color: '#000',
               padding: '4px 10px',
               fontWeight: 800,
-              fontSize: '14px',
+              fontSize: '13px',
               fontFamily: 'var(--font-mono)',
               letterSpacing: '1px',
               clipPath: 'polygon(0 0, 100% 0, 100% 70%, 85% 100%, 0 100%)',
@@ -374,34 +361,38 @@ export default function App() {
         <nav style={{ display: 'flex', gap: '4px' }}>
           {[
             { id: 'observatory', label: '01 // TACTICAL OBSERVATORY', icon: Activity },
-            { id: 'workbench', label: '02 // BILINGUAL WORKBENCH', icon: BookOpen },
+            { id: 'workbench', label: `02 // WORKBENCH (${totalSegments.toLocaleString()})`, icon: BookOpen },
             { id: 'radar', label: '03 // REVERSE RADAR', icon: Search },
-            { id: 'focus', label: '04 // FOCUS BOX', icon: Eye },
+            { id: 'focus', label: `04 // FOCUS BOX (${(stats.stages['0'] || 0).toLocaleString()})`, icon: Eye },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => {
+                  setActiveTab(tab.id as any);
+                  if (tab.id === 'workbench') fetchSegments(page, stageFilter, searchFilter);
+                  if (tab.id === 'focus') fetchFocusItems();
+                }}
                 style={{
                   background: isActive ? 'var(--bg-elevated)' : 'transparent',
                   color: isActive ? 'var(--accent-tech)' : 'var(--text-secondary)',
                   border: '1px solid',
                   borderColor: isActive ? 'var(--accent-tech)' : 'transparent',
-                  padding: '6px 14px',
+                  padding: '6px 12px',
                   fontSize: '11px',
                   fontWeight: 600,
                   fontFamily: 'var(--font-mono)',
                   letterSpacing: '0.5px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: '6px',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
               >
-                <Icon size={14} color={isActive ? 'var(--accent-tech)' : 'var(--text-secondary)'} />
+                <Icon size={13} color={isActive ? 'var(--accent-tech)' : 'var(--text-secondary)'} />
                 {tab.label}
               </button>
             );
@@ -409,7 +400,7 @@ export default function App() {
         </nav>
 
         {/* 右侧系统运行态势指示器 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span
               className="live-dot"
@@ -417,25 +408,23 @@ export default function App() {
                 width: '8px',
                 height: '8px',
                 borderRadius: '50%',
-                background: 'var(--accent-cyan)',
+                background: stats.tm_entries > 0 ? 'var(--accent-cyan)' : 'var(--accent-red)',
                 display: 'inline-block',
+                boxShadow: `0 0 8px ${stats.tm_entries > 0 ? 'var(--accent-cyan)' : 'var(--accent-red)'}`,
               }}
             />
             <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--accent-cyan)' }}>
-              SYS.ONLINE: 143,860 TM
+              SYS.ONLINE: {stats.tm_entries.toLocaleString()} TM
             </span>
           </div>
           <button
-            onClick={() => {
-              showNotification('🚀 已执行快速扫描并热重载');
-              fetchStatus();
-              fetchSegments();
-            }}
+            onClick={handleSyncAll}
+            disabled={isSyncing}
             style={{
               background: 'transparent',
               border: '1px solid var(--border-ruler)',
               color: 'var(--text-primary)',
-              padding: '5px 10px',
+              padding: '4px 10px',
               fontSize: '11px',
               fontFamily: 'var(--font-mono)',
               cursor: 'pointer',
@@ -444,8 +433,8 @@ export default function App() {
               gap: '6px',
             }}
           >
-            <RefreshCw size={12} />
-            SYNC
+            <RefreshCw size={12} className={isSyncing ? 'spin-icon' : ''} />
+            {isSyncing ? 'SYNCING...' : 'SYNC'}
           </button>
         </div>
       </header>
@@ -456,14 +445,14 @@ export default function App() {
           style={{
             position: 'fixed',
             top: '64px',
-            right: '24px',
+            right: '20px',
             background: 'var(--bg-elevated)',
             borderLeft: '4px solid var(--accent-tech)',
             padding: '10px 18px',
             fontSize: '12px',
             fontFamily: 'var(--font-mono)',
             color: 'var(--text-primary)',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.8)',
             zIndex: 100,
           }}
         >
@@ -472,20 +461,20 @@ export default function App() {
       )}
 
       {/* 主工作区视图切换 */}
-      <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <main style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* ============================================================== */}
         {/* TAB 1: 态势大盘 (Tactical Observatory) */}
         {/* ============================================================== */}
         {activeTab === 'observatory' && (
-          <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* 顶层四大极端对比指标卡 */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', flexShrink: 0 }}>
               {/* 指标卡 1: 全局完成率 */}
               <div
                 style={{
                   background: 'var(--bg-card)',
                   border: '1px solid var(--border-subtle)',
-                  padding: '20px',
+                  padding: '18px',
                   position: 'relative',
                   overflow: 'hidden',
                 }}
@@ -493,7 +482,7 @@ export default function App() {
                 <div style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', letterSpacing: '1px' }}>
                   OVERALL COMPLETION RATE
                 </div>
-                <div style={{ fontSize: '38px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--accent-tech)', margin: '8px 0' }}>
+                <div style={{ fontSize: '34px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--accent-tech)', margin: '6px 0' }}>
                   {completionPercent}%
                 </div>
                 <div style={{ height: '4px', background: 'var(--border-subtle)', width: '100%', position: 'relative' }}>
@@ -509,7 +498,7 @@ export default function App() {
                 style={{
                   background: 'var(--bg-card)',
                   border: '1px solid var(--border-subtle)',
-                  padding: '20px',
+                  padding: '18px',
                   position: 'relative',
                 }}
               >
@@ -518,21 +507,29 @@ export default function App() {
                 </div>
                 <div
                   style={{
-                    fontSize: '38px',
+                    fontSize: '34px',
                     fontWeight: 800,
                     fontFamily: 'var(--font-mono)',
                     color: pendingCount > 0 ? 'var(--accent-red)' : 'var(--accent-green)',
-                    margin: '8px 0',
+                    margin: '6px 0',
                   }}
                 >
                   {pendingCount}
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-                  TARGET: AbEvents-a1c8p2 (S8 Part 2)
+                  UNTRANSLATED NODES IN WORKSPACE
                 </div>
                 <div style={{ marginTop: '8px', display: 'flex', gap: '6px' }}>
-                  <span style={{ fontSize: '10px', background: 'rgba(255,70,70,0.15)', color: 'var(--accent-red)', padding: '2px 6px', fontFamily: 'var(--font-mono)' }}>
-                    ACTION REQUIRED
+                  <span
+                    style={{
+                      fontSize: '10px',
+                      background: pendingCount > 0 ? 'rgba(255,70,70,0.15)' : 'rgba(46,229,132,0.15)',
+                      color: pendingCount > 0 ? 'var(--accent-red)' : 'var(--accent-green)',
+                      padding: '2px 6px',
+                      fontFamily: 'var(--font-mono)',
+                    }}
+                  >
+                    {pendingCount > 0 ? 'ACTION REQUIRED' : 'ALL CLEAR'}
                   </span>
                 </div>
               </div>
@@ -542,17 +539,17 @@ export default function App() {
                 style={{
                   background: 'var(--bg-card)',
                   border: '1px solid var(--border-subtle)',
-                  padding: '20px',
+                  padding: '18px',
                 }}
               >
                 <div style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', letterSpacing: '1px' }}>
                   TM MEMORY CACHE
                 </div>
-                <div style={{ fontSize: '38px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--accent-cyan)', margin: '8px 0' }}>
+                <div style={{ fontSize: '34px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--accent-cyan)', margin: '6px 0' }}>
                   {stats.tm_entries.toLocaleString()}
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-                  ORIGIN: ZERO ASSOCIATION 20260921
+                  ORIGIN: BASELINE + PART2 DUAL FEED
                 </div>
                 <div style={{ marginTop: '8px', fontSize: '10px', color: 'var(--accent-green)', fontFamily: 'var(--font-mono)' }}>
                   ✓ 100% INVERTED FTS5 INDEXED
@@ -564,13 +561,13 @@ export default function App() {
                 style={{
                   background: 'var(--bg-card)',
                   border: '1px solid var(--border-subtle)',
-                  padding: '20px',
+                  padding: '18px',
                 }}
               >
                 <div style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', letterSpacing: '1px' }}>
                   QA GATEKEEPER DEFENSE
                 </div>
-                <div style={{ fontSize: '38px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--accent-green)', margin: '8px 0' }}>
+                <div style={{ fontSize: '34px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--accent-green)', margin: '6px 0' }}>
                   100% PASS
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
@@ -583,103 +580,102 @@ export default function App() {
             </div>
 
             {/* 中层：分模块态势雷达与控制台日志 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px' }}>
               {/* 分模块态势雷达 */}
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', padding: '24px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                   <div style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
                     SECTOR PROGRESS BREAKDOWN // 模块态势图谱
                   </div>
                   <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-                    TOTAL 2,022 FILES
+                    TOTAL {stats.total_files.toLocaleString()} FILES
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {[
-                    { name: 'SECTOR 01 // STORY DATA (主线与人物剧情)', pct: 100, tot: 45210, done: 45210, status: 'LOCKED' },
-                    { name: 'SECTOR 02 // BATTLE SKILLS & BUFFS (战斗词条与技能)', pct: 100, tot: 38920, done: 38920, status: 'LOCKED' },
-                    { name: 'SECTOR 03 // ABNORMALITY & RPG (异想体与RPG)', pct: 97.2, tot: 12748, done: 12410, status: '338 UNTRANSLATED' },
-                    { name: 'SECTOR 04 // SYSTEM & CORE UI (系统交互界面)', pct: 100, tot: 47303, done: 47303, status: 'LOCKED' },
-                  ].map((sec, idx) => (
-                    <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
-                        <span style={{ color: 'var(--text-secondary)' }}>{sec.name}</span>
-                        <span style={{ color: sec.pct === 100 ? 'var(--accent-green)' : 'var(--accent-tech)', fontWeight: 700 }}>
-                          {sec.pct}% [{sec.status}]
-                        </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {Object.entries(stats.categories).map(([catKey, catVal]) => {
+                    const pct = Math.round((catVal.translated / Math.max(catVal.total, 1)) * 100);
+                    const diff = catVal.total - catVal.translated;
+                    const catTitle =
+                      catKey === 'story'
+                        ? 'SECTOR 01 // STORY DATA (主线与剧情对话)'
+                        : catKey === 'battle'
+                        ? 'SECTOR 02 // BATTLE & SKILLS (战斗机制与关键词)'
+                        : catKey === 'system'
+                        ? 'SECTOR 03 // RPG & SYSTEM (界面与探索系统)'
+                        : `SECTOR // ${catKey.toUpperCase()}`;
+
+                    return (
+                      <div key={catKey}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontFamily: 'var(--font-mono)', marginBottom: '6px' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>{catTitle}</span>
+                          <span style={{ color: diff > 0 ? 'var(--accent-red)' : 'var(--accent-green)' }}>
+                            {pct}% ({catVal.translated.toLocaleString()} / {catVal.total.toLocaleString()})
+                          </span>
+                        </div>
+                        <div style={{ height: '6px', background: 'var(--bg-surface)', position: 'relative' }}>
+                          <div
+                            style={{
+                              height: '100%',
+                              width: `${pct}%`,
+                              background: diff > 0 ? 'var(--accent-tech)' : 'var(--accent-green)',
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div style={{ height: '6px', background: 'var(--bg-surface)', width: '100%', position: 'relative' }}>
-                        <div
-                          style={{
-                            height: '100%',
-                            width: `${sec.pct}%`,
-                            background: sec.pct === 100 ? 'var(--accent-green)' : 'var(--accent-tech)',
-                          }}
-                        />
-                      </div>
-                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                        {sec.done.toLocaleString()} / {sec.tot.toLocaleString()} LINES VERIFIED
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* 核心流水线动态日志 */}
-              <div
-                style={{
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--border-subtle)',
-                  padding: '20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  fontFamily: 'var(--font-mono)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', fontSize: '11px', color: 'var(--accent-cyan)' }}>
-                  <Terminal size={14} />
-                  <span>LCT KERNEL STREAM // 工业级流水线日志</span>
+              {/* 实时自动化日志流 (Terminal Log) */}
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', padding: '20px', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Terminal size={14} />
+                    SYSTEM EVENT STREAM
+                  </div>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>LIVE BUS</span>
                 </div>
                 <div
                   style={{
                     flex: 1,
-                    background: '#040609',
+                    background: 'var(--bg-space)',
+                    border: '1px solid var(--border-ruler)',
                     padding: '12px',
                     fontSize: '11px',
+                    fontFamily: 'var(--font-mono)',
                     color: 'var(--text-secondary)',
                     overflowY: 'auto',
-                    lineHeight: '1.6',
+                    lineHeight: '1.7',
                   }}
                 >
-                  <div style={{ color: 'var(--text-muted)' }}>[00:46:05] [KERNEL] LCT Engine v0.2.0 initialized.</div>
-                  <div style={{ color: 'var(--accent-green)' }}>[00:48:20] [TM-SYNC] Aligned 143,860 entries from Zero Association (8.4s).</div>
-                  <div style={{ color: 'var(--accent-cyan)' }}>[00:53:47] [EXTRACT] Scanned 2,022 files (144,181 lines). Untranslated: 338.</div>
-                  <div style={{ color: 'var(--accent-tech)' }}>[01:10:02] [DEFENSE] Schema drift sniffer active on AbEvents-a1c8p2.json.</div>
-                  <div style={{ color: 'var(--accent-green)' }}>[01:20:15] [GATEKEEPER] Zero tolerance audit L01-L08 passed. 0 fatal.</div>
-                  <div style={{ color: 'var(--text-primary)' }}>[01:25:30] [OBSERVATORY] Listening on 127.0.0.1:3000. Browser online.</div>
+                  <div style={{ color: 'var(--accent-cyan)' }}>[INF] TM Inverted Indexer loaded: {stats.tm_entries.toLocaleString()} entries online.</div>
+                  <div style={{ color: 'var(--text-muted)' }}>[INF] SQLite WAL mode active. FTS5 Trigram tokenizer verified.</div>
+                  <div style={{ color: 'var(--accent-tech)' }}>[INF] Active project segments scanned: {stats.total_segments.toLocaleString()} items.</div>
+                  <div style={{ color: 'var(--accent-green)' }}>[SEC] L01~L09 QA Gatekeepers active: Full-width tildes and illegal TMP tags blocked.</div>
+                  <div style={{ color: 'var(--text-secondary)' }}>[EVT] Bilingual workbench ready. Paging buffer: {pageSize} per page.</div>
                 </div>
 
-                <div style={{ marginTop: '14px', display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
                   <button
                     onClick={() => {
-                      setActiveTab('workbench');
                       setStageFilter('untranslated');
-                      fetchSegments(1, 'untranslated');
+                      setActiveTab('workbench');
+                      fetchSegments(1, 'untranslated', '');
                     }}
                     style={{
-                      flex: 1,
                       background: 'var(--accent-tech)',
                       color: '#000',
                       border: 'none',
-                      padding: '8px',
+                      padding: '8px 14px',
                       fontSize: '11px',
                       fontWeight: 700,
                       fontFamily: 'var(--font-mono)',
                       cursor: 'pointer',
                     }}
                   >
-                    ⚡ 查看并开荒 338 条生肉
+                    ⚡ 查看并开荒 {pendingCount} 条生肉
                   </button>
                   <button
                     onClick={() => {
@@ -707,17 +703,18 @@ export default function App() {
         {/* TAB 2: 双语对齐工作台 (Bilingual Workbench) */}
         {/* ============================================================== */}
         {activeTab === 'workbench' && (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {/* 工作台顶部过滤工具栏 */}
             <div
               style={{
                 height: '48px',
+                flexShrink: 0,
                 background: 'var(--bg-surface)',
                 borderBottom: '1px solid var(--border-ruler)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '0 24px',
+                padding: '0 20px',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -725,31 +722,35 @@ export default function App() {
                   STAGE FILTER:
                 </span>
                 {[
-                  { id: 'all', label: 'ALL SEGMENTS' },
-                  { id: 'untranslated', label: 'UNTRANSLATED (338)' },
-                  { id: 'tm_exact', label: 'TM EXACT' },
-                  { id: 'reviewed', label: 'REVIEWED' },
-                ].map((stg) => (
-                  <button
-                    key={stg.id}
-                    onClick={() => {
-                      setStageFilter(stg.id);
-                      fetchSegments(1, stg.id, searchFilter);
-                    }}
-                    style={{
-                      background: stageFilter === stg.id ? 'var(--bg-elevated)' : 'transparent',
-                      color: stageFilter === stg.id ? 'var(--accent-tech)' : 'var(--text-secondary)',
-                      border: '1px solid',
-                      borderColor: stageFilter === stg.id ? 'var(--accent-tech)' : 'transparent',
-                      padding: '4px 10px',
-                      fontSize: '10px',
-                      fontFamily: 'var(--font-mono)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {stg.label}
-                  </button>
-                ))}
+                  { id: 'all', label: `ALL (${stats.total_segments.toLocaleString()})` },
+                  { id: 'untranslated', label: `UNTRANSLATED (${(stats.stages['0'] || 0).toLocaleString()})` },
+                  { id: 'tm_exact', label: `TM EXACT (${(stats.stages['1'] || 0).toLocaleString()})` },
+                  { id: 'reviewed', label: `REVIEWED (${(stats.stages['4'] || 0).toLocaleString()})` },
+                ].map((stg) => {
+                  const isCur = stageFilter === stg.id;
+                  return (
+                    <button
+                      key={stg.id}
+                      onClick={() => {
+                        setStageFilter(stg.id);
+                        fetchSegments(1, stg.id, searchFilter);
+                      }}
+                      style={{
+                        background: isCur ? 'var(--bg-elevated)' : 'transparent',
+                        color: isCur ? 'var(--accent-tech)' : 'var(--text-secondary)',
+                        border: '1px solid',
+                        borderColor: isCur ? 'var(--accent-tech)' : 'var(--border-subtle)',
+                        padding: '4px 10px',
+                        fontSize: '11px',
+                        fontFamily: 'var(--font-mono)',
+                        cursor: 'pointer',
+                        transition: 'all 0.1s ease',
+                      }}
+                    >
+                      {stg.label}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* 实时搜索框 */}
@@ -771,61 +772,102 @@ export default function App() {
                       padding: '4px 10px 4px 26px',
                       fontSize: '11px',
                       fontFamily: 'var(--font-mono)',
-                      width: '260px',
+                      width: '240px',
                       outline: 'none',
                     }}
                   />
                 </div>
-                <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-                  TOTAL: {totalSegments}
-                </span>
+                {segmentsLoading && (
+                  <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: 'var(--accent-tech)' }}>
+                    SCANNING...
+                  </span>
+                )}
               </div>
             </div>
 
             {/* 条目列表区域 */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {segments.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                  NO SEGMENTS MATCHED FILTER
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {segmentsLoading ? (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)', fontSize: '13px' }}>
+                  ⚡ QUERYING REPOSITORY // 正在从 SQLite 数据库提取词条...
+                </div>
+              ) : segments.length === 0 ? (
+                <div
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-ruler)',
+                    padding: '40px',
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '12px',
+                    margin: 'auto 0',
+                  }}
+                >
+                  <div style={{ fontSize: '13px', fontFamily: 'var(--font-mono)', color: 'var(--accent-gold)' }}>
+                    NO SEGMENTS MATCHED FILTER // 当前筛选条件下无匹配条目
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                    阶段: [{stageFilter.toUpperCase()}] | 检索词: "{searchFilter || '*'}"
+                  </div>
+                  <button
+                    onClick={() => {
+                      setStageFilter('all');
+                      setSearchFilter('');
+                      fetchSegments(1, 'all', '');
+                    }}
+                    style={{
+                      background: 'var(--accent-tech)',
+                      color: '#000',
+                      border: 'none',
+                      padding: '6px 16px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      fontFamily: 'var(--font-mono)',
+                      cursor: 'pointer',
+                      marginTop: '6px',
+                    }}
+                  >
+                    重置筛选条件 (显示全部词条)
+                  </button>
                 </div>
               ) : (
                 segments.map((item) => {
-                  const draftText = editingTranslations[item.id] !== undefined ? editingTranslations[item.id] : (item.target_zh || '');
-                  // 客户端实时门禁预检 (严查全角波浪号与括号)
+                  const draftText = editingTranslations[item.id] ?? item.target_zh ?? '';
                   const hasBadTilde = /～|〜/.test(draftText);
-                  const isSaved = item.stage === 'Reviewed';
 
                   return (
                     <div
                       key={item.id}
                       style={{
                         background: 'var(--bg-card)',
-                        border: '1px solid',
-                        borderColor: hasBadTilde ? 'var(--accent-red)' : 'var(--border-subtle)',
-                        padding: '16px',
+                        border: '1px solid var(--border-subtle)',
+                        borderLeft: hasBadTilde
+                          ? '4px solid var(--accent-red)'
+                          : item.stage === 'Reviewed'
+                          ? '4px solid var(--accent-green)'
+                          : '4px solid var(--accent-tech)',
+                        padding: '14px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '12px',
-                        transition: 'border-color 0.2s ease',
+                        gap: '10px',
                       }}
                     >
-                      {/* 条目元数据标头 */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ background: 'var(--bg-surface)', color: 'var(--accent-gold)', padding: '2px 6px', fontSize: '10px', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                            #{item.id}
-                          </span>
-                          <span style={{ color: 'var(--text-muted)', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
-                            {item.relative_path} {item.key_path}
-                          </span>
+                      {/* 条目技术元数据栏 */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ color: 'var(--accent-cyan)' }}>#{item.id}</span>
+                          <span style={{ color: 'var(--text-primary)' }}>{item.relative_path}</span>
+                          <span style={{ color: 'var(--text-muted)' }}>{item.key_path}</span>
                           {item.speaker && (
-                            <span style={{ background: 'rgba(0,210,255,0.1)', color: 'var(--accent-cyan)', padding: '2px 6px', fontSize: '10px', fontFamily: 'var(--font-mono)' }}>
-                              SPEAKER: {item.speaker}
+                            <span style={{ background: 'var(--bg-elevated)', color: 'var(--accent-gold)', padding: '1px 6px', fontSize: '10px' }}>
+                              {item.speaker}
                             </span>
                           )}
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span
                             style={{
                               fontSize: '10px',
@@ -846,9 +888,9 @@ export default function App() {
                       </div>
 
                       {/* 中韩双语对照编辑网格 */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                         {/* 左：韩文原版生肉 */}
-                        <div style={{ background: 'var(--bg-surface)', padding: '12px', border: '1px solid var(--border-subtle)', fontSize: '13px', lineHeight: '1.6', color: 'var(--text-secondary)' }}>
+                        <div style={{ background: 'var(--bg-surface)', padding: '10px', border: '1px solid var(--border-subtle)', fontSize: '13px', lineHeight: '1.6', color: 'var(--text-secondary)' }}>
                           {item.source_kr}
                         </div>
 
@@ -888,15 +930,11 @@ export default function App() {
                                     color: 'var(--accent-red)',
                                     fontSize: '10px',
                                     fontFamily: 'var(--font-mono)',
-                                    padding: '3px 8px',
+                                    padding: '2px 8px',
                                     cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '4px',
                                   }}
                                 >
-                                  <Sparkles size={10} />
-                                  一键修复全角波浪号
+                                  ⚡ 一键修正全角波浪号
                                 </button>
                               )}
                             </div>
@@ -929,6 +967,59 @@ export default function App() {
                 })
               )}
             </div>
+
+            {/* 工作台底部紧凑分页栏 */}
+            <div
+              style={{
+                height: '42px',
+                flexShrink: 0,
+                background: 'var(--bg-surface)',
+                borderTop: '1px solid var(--border-ruler)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 20px',
+                fontSize: '11px',
+                fontFamily: 'var(--font-mono)',
+              }}
+            >
+              <div style={{ color: 'var(--text-muted)' }}>
+                SHOWING {totalSegments === 0 ? 0 : (page - 1) * pageSize + 1} -{' '}
+                {Math.min(page * pageSize, totalSegments)} OF {totalSegments.toLocaleString()} SEGMENTS
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <button
+                  onClick={() => fetchSegments(Math.max(1, page - 1), stageFilter, searchFilter)}
+                  disabled={page <= 1}
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-ruler)',
+                    color: page <= 1 ? 'var(--text-muted)' : 'var(--text-primary)',
+                    padding: '3px 10px',
+                    cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  ◄ PREV
+                </button>
+                <span style={{ color: 'var(--accent-tech)' }}>
+                  PAGE {page} / {totalPages}
+                </span>
+                <button
+                  onClick={() => fetchSegments(Math.min(totalPages, page + 1), stageFilter, searchFilter)}
+                  disabled={page >= totalPages}
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-ruler)',
+                    color: page >= totalPages ? 'var(--text-muted)' : 'var(--text-primary)',
+                    padding: '3px 10px',
+                    cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  NEXT ►
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -936,11 +1027,11 @@ export default function App() {
         {/* TAB 3: 反向台词雷达 (Reverse Finder) */}
         {/* ============================================================== */}
         {activeTab === 'radar' && (
-          <div style={{ flex: 1, padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: '20px', overflow: 'hidden' }}>
+          <div style={{ flex: 1, minHeight: 0, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '16px', overflow: 'hidden' }}>
             {/* 搜索控制台 */}
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', padding: '20px' }}>
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', padding: '16px', flexShrink: 0 }}>
               <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--accent-cyan)', marginBottom: '8px' }}>
-                REVERSE IN-GAME SCRIPT FINDER // 毫秒级反向实机台词雷达
+                REVERSE IN-GAME SCRIPT FINDER // 毫秒级双擎实机台词雷达 (支持项目词条 + 30 万 TM 记忆库)
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <input
@@ -956,7 +1047,7 @@ export default function App() {
                     background: 'var(--bg-surface)',
                     border: '1px solid var(--border-ruler)',
                     color: 'var(--text-primary)',
-                    padding: '8px 14px',
+                    padding: '8px 12px',
                     fontSize: '13px',
                     fontFamily: 'var(--font-mono)',
                     outline: 'none',
@@ -975,14 +1066,14 @@ export default function App() {
                     cursor: 'pointer',
                   }}
                 >
-                  {radarLoading ? 'SEARCHING...' : 'SEARCH 143,860 TM'}
+                  {radarLoading ? 'SCANNING...' : `SEARCH ${stats.tm_entries.toLocaleString()} TM`}
                 </button>
               </div>
 
               {/* 快捷检索标签 */}
-              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>QUICK TAGS:</span>
-                {['契约', '균열', '身体能力衰退', '호흡', '뫼르소', '단테', '거울 조각'].map((tag) => (
+                {['身体能力衰退', '계약', '균열', '호흡', '뫼르소', '단테', '거울 조각'].map((tag) => (
                   <button
                     key={tag}
                     onClick={() => {
@@ -1005,43 +1096,127 @@ export default function App() {
               </div>
             </div>
 
-            {/* 检索结果展示表 */}
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {radarResults.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                  NO ENTRIES FOUND IN TM KNOWLEDGE BASE
+            {/* 检索状态小标头 */}
+            {radarResults.query && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', flexShrink: 0 }}>
+                <span>
+                  QUERY: "{radarResults.query}" // FOUND {radarResults.total_found} MATCHES (
+                  {radarResults.tm_entries.length} TM ENTRIES, {radarResults.segments.length} PROJECT SEGMENTS)
+                </span>
+                <span style={{ color: 'var(--accent-cyan)' }}>LATENCY: {radarDuration}ms</span>
+              </div>
+            )}
+
+            {/* 检索结果展示表 (允许独立纵向滚动) */}
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {radarLoading ? (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)' }}>
+                  ⚡ 雷达正在高速反查 FTS5 倒排索引...
+                </div>
+              ) : radarResults.total_found === 0 ? (
+                <div
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-ruler)',
+                    padding: '30px',
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  <div style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', color: 'var(--accent-gold)' }}>
+                    NO ENTRIES FOUND IN TM OR PROJECT DATABASE
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                    未能检索到与 "{radarQuery}" 匹配的条目。建议使用上方快捷标签或尝试输入更短的词根。
+                  </div>
                 </div>
               ) : (
-                radarResults.map((item, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      background: 'var(--bg-card)',
-                      border: '1px solid var(--border-subtle)',
-                      padding: '16px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '8px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        <span style={{ color: 'var(--accent-gold)' }}>ORIGIN: {item.source_origin} (WEIGHT: {item.priority})</span>
-                        <span style={{ color: 'var(--text-muted)' }}>SCOPE: {item.file_scope || '*'}</span>
+                <>
+                  {/* 项目活跃词条命中 */}
+                  {radarResults.segments.map((item, idx) => (
+                    <div
+                      key={`seg-${idx}`}
+                      style={{
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-subtle)',
+                        borderLeft: '4px solid var(--accent-tech)',
+                        padding: '12px 16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                          <span style={{ background: 'var(--accent-tech)', color: '#000', padding: '1px 6px', fontWeight: 700 }}>
+                            PROJECT SEGMENT
+                          </span>
+                          <span style={{ color: 'var(--text-primary)' }}>{item.relative_path}</span>
+                          <span style={{ color: 'var(--text-muted)' }}>{item.key_path}</span>
+                        </div>
+                        {item.speaker && <span style={{ color: 'var(--accent-gold)' }}>SPEAKER: {item.speaker}</span>}
                       </div>
-                      {item.speaker && <span style={{ color: 'var(--accent-cyan)' }}>SPEAKER: {item.speaker}</span>}
-                    </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '6px' }}>
-                      <div style={{ background: 'var(--bg-surface)', padding: '10px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                        {item.source_kr}
-                      </div>
-                      <div style={{ background: 'var(--bg-surface)', padding: '10px', fontSize: '12px', color: 'var(--text-primary)', lineHeight: '1.5' }}>
-                        {item.target_zh}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginTop: '4px' }}>
+                        <div style={{ background: 'var(--bg-surface)', padding: '8px 12px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                          {item.source_kr}
+                        </div>
+                        <div style={{ background: 'var(--bg-surface)', padding: '8px 12px', fontSize: '12px', color: 'var(--text-primary)', lineHeight: '1.5' }}>
+                          {item.target_zh || '<未翻译>'}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+
+                  {/* TM 翻译记忆库命中 */}
+                  {radarResults.tm_entries.map((item, idx) => (
+                    <div
+                      key={`tm-${idx}`}
+                      style={{
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-subtle)',
+                        borderLeft: '4px solid var(--accent-cyan)',
+                        padding: '12px 16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                          <span style={{ background: 'var(--accent-cyan)', color: '#000', padding: '1px 6px', fontWeight: 700 }}>
+                            TM MEMORY ({item.source_origin})
+                          </span>
+                          <span style={{ color: 'var(--text-muted)' }}>SCOPE: {item.file_scope || '*'}</span>
+                          <span style={{ color: 'var(--accent-gold)' }}>WEIGHT: {item.priority}</span>
+                        </div>
+                        {item.speaker && <span style={{ color: 'var(--accent-cyan)' }}>SPEAKER: {item.speaker}</span>}
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginTop: '4px' }}>
+                        <div style={{ background: 'var(--bg-surface)', padding: '8px 12px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                          {item.source_kr}
+                        </div>
+                        <div style={{ background: 'var(--bg-surface)', padding: '8px 12px', fontSize: '12px', color: 'var(--text-primary)', lineHeight: '1.5', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <span>{item.target_zh}</span>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(item.target_zh);
+                              showNotification('✓ 译文已复制到剪贴板');
+                            }}
+                            title="复制译文"
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px' }}
+                          >
+                            <Copy size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </>
               )}
             </div>
           </div>
@@ -1051,62 +1226,99 @@ export default function App() {
         {/* TAB 4: 重点裁决箱 (Focus Box) */}
         {/* ============================================================== */}
         {activeTab === 'focus' && (
-          <div style={{ flex: 1, padding: '32px 64px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ flex: 1, minHeight: 0, padding: '20px 40px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', overflowY: 'auto' }}>
             <div
               style={{
                 width: '100%',
-                maxWidth: '900px',
+                maxWidth: '850px',
                 background: 'var(--bg-card)',
                 border: '1px solid var(--border-ruler)',
-                padding: '32px',
-                boxShadow: '0 12px 32px rgba(0,0,0,0.7)',
+                padding: '24px',
+                boxShadow: '0 12px 32px rgba(0,0,0,0.8)',
                 position: 'relative',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '10px', marginBottom: '16px' }}>
                 <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--accent-tech)' }}>
-                  HUMAN FOCUS DECISION BOX // 存疑条目高精快速裁决台
+                  HUMAN FOCUS DECISION BOX // 存疑/生肉高精快速裁决台
                 </span>
                 <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-                  DECISION #{focusIndex + 1} OF {Math.max(segments.length, 1)}
+                  DECISION #{focusIndex + 1} OF {Math.max(focusItems.length, 1)}
                 </span>
               </div>
 
-              {segments.length > 0 && segments[focusIndex] ? (
+              {focusLoading ? (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)' }}>
+                  ⚡ 正在加载生肉裁决队列...
+                </div>
+              ) : focusItems.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--accent-green)', fontFamily: 'var(--font-mono)' }}>
+                  🎉 当前工作区无待裁决生肉！全部词条均已完成翻译。
+                </div>
+              ) : (
                 (() => {
-                  const cur = segments[focusIndex];
+                  const cur = focusItems[focusIndex];
+                  const curText = editingTranslations[cur.id] ?? cur.target_zh ?? '';
+                  const hasBadTilde = /～|〜/.test(curText);
+
                   return (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                      <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-                        FILE: {cur.relative_path} | KEY: {cur.key_path}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                        <span>FILE: {cur.relative_path} | KEY: {cur.key_path}</span>
+                        {cur.speaker && <span style={{ color: 'var(--accent-gold)' }}>SPEAKER: {cur.speaker}</span>}
                       </div>
 
                       {/* 韩文原句大字展示 */}
                       <div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginBottom: '6px' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginBottom: '4px' }}>
                           SOURCE KOREAN (原文)
                         </div>
-                        <div style={{ background: 'var(--bg-surface)', padding: '16px', fontSize: '16px', lineHeight: '1.6', color: 'var(--text-secondary)' }}>
+                        <div style={{ background: 'var(--bg-surface)', padding: '14px', fontSize: '15px', lineHeight: '1.6', color: 'var(--text-secondary)' }}>
                           {cur.source_kr}
                         </div>
                       </div>
 
                       {/* 中文译文大字编辑 */}
                       <div>
-                        <div style={{ fontSize: '11px', color: 'var(--accent-tech)', fontFamily: 'var(--font-mono)', marginBottom: '6px' }}>
-                          TARGET CHINESE (裁决译文)
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '10px', color: 'var(--accent-tech)', fontFamily: 'var(--font-mono)' }}>
+                            TARGET CHINESE (裁决译文)
+                          </span>
+                          {hasBadTilde && (
+                            <button
+                              onClick={() => handleAutoFix(cur)}
+                              style={{
+                                background: 'transparent',
+                                border: '1px solid var(--accent-red)',
+                                color: 'var(--accent-red)',
+                                fontSize: '10px',
+                                fontFamily: 'var(--font-mono)',
+                                padding: '1px 6px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              ⚡ 一键修复全角符号
+                            </button>
+                          )}
                         </div>
                         <textarea
                           rows={3}
-                          value={editingTranslations[cur.id] ?? cur.target_zh ?? ''}
+                          value={curText}
                           onChange={(e) => setEditingTranslations({ ...editingTranslations, [cur.id]: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                              handleSaveTranslation(cur, curText, true);
+                            }
+                          }}
+                          placeholder="在此输入裁决译文 (按 Ctrl+Enter 提交并自动切换至下一条)..."
                           style={{
                             width: '100%',
                             background: 'var(--bg-surface)',
-                            border: '1px solid var(--accent-tech)',
+                            border: '1px solid',
+                            borderColor: hasBadTilde ? 'var(--accent-red)' : 'var(--accent-tech)',
                             color: 'var(--text-primary)',
-                            padding: '14px',
-                            fontSize: '15px',
+                            padding: '12px',
+                            fontSize: '14px',
                             lineHeight: '1.6',
                             fontFamily: 'var(--font-sans)',
                             outline: 'none',
@@ -1115,7 +1327,7 @@ export default function App() {
                       </div>
 
                       {/* 键盘操作流按钮 */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <button
                             onClick={() => setFocusIndex(Math.max(0, focusIndex - 1))}
@@ -1124,25 +1336,25 @@ export default function App() {
                               background: 'transparent',
                               border: '1px solid var(--border-ruler)',
                               color: 'var(--text-secondary)',
-                              padding: '8px 16px',
+                              padding: '6px 12px',
                               fontSize: '11px',
                               fontFamily: 'var(--font-mono)',
-                              cursor: 'pointer',
+                              cursor: focusIndex === 0 ? 'not-allowed' : 'pointer',
                             }}
                           >
                             ◄ PREV (Left)
                           </button>
                           <button
-                            onClick={() => setFocusIndex(Math.min(segments.length - 1, focusIndex + 1))}
-                            disabled={focusIndex >= segments.length - 1}
+                            onClick={() => setFocusIndex(Math.min(focusItems.length - 1, focusIndex + 1))}
+                            disabled={focusIndex >= focusItems.length - 1}
                             style={{
                               background: 'transparent',
                               border: '1px solid var(--border-ruler)',
                               color: 'var(--text-secondary)',
-                              padding: '8px 16px',
+                              padding: '6px 12px',
                               fontSize: '11px',
                               fontFamily: 'var(--font-mono)',
-                              cursor: 'pointer',
+                              cursor: focusIndex >= focusItems.length - 1 ? 'not-allowed' : 'pointer',
                             }}
                           >
                             NEXT (Right) ►
@@ -1150,32 +1362,29 @@ export default function App() {
                         </div>
 
                         <button
-                          onClick={() => {
-                            const val = editingTranslations[cur.id] ?? cur.target_zh ?? '';
-                            handleSaveTranslation(cur, val);
-                            setFocusIndex(Math.min(segments.length - 1, focusIndex + 1));
-                          }}
+                          onClick={() => handleSaveTranslation(cur, curText, true)}
+                          disabled={savingId === cur.id || hasBadTilde}
                           style={{
-                            background: 'var(--accent-tech)',
+                            background: hasBadTilde ? 'var(--border-ruler)' : 'var(--accent-tech)',
                             color: '#000',
                             border: 'none',
-                            padding: '10px 24px',
+                            padding: '6px 20px',
                             fontSize: '12px',
-                            fontWeight: 800,
+                            fontWeight: 700,
                             fontFamily: 'var(--font-mono)',
-                            cursor: 'pointer',
+                            cursor: hasBadTilde ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
                           }}
                         >
-                          ✓ APPROVE & NEXT (Enter)
+                          <CornerDownLeft size={13} />
+                          {savingId === cur.id ? 'SAVING...' : 'APPROVE & NEXT (Ctrl+Enter)'}
                         </button>
                       </div>
                     </div>
                   );
                 })()
-              ) : (
-                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                  ALL PENDING DECISIONS CLEARED
-                </div>
               )}
             </div>
           </div>
