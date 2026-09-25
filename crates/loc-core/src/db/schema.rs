@@ -108,6 +108,25 @@ pub fn migrate(conn: &Connection) -> Result<()> {
             description TEXT,
             created_at TEXT NOT NULL
         );
+
+        -- 8. TM 翻译记忆库 FTS5 全文索引虚拟表
+        CREATE VIRTUAL TABLE IF NOT EXISTS tm_fts USING fts5(
+            tm_id UNINDEXED,
+            source_kr,
+            target_zh,
+            speaker,
+            file_scope,
+            tokenize = 'trigram'
+        );
+
+        CREATE TRIGGER IF NOT EXISTS tm_ai AFTER INSERT ON tm_entries BEGIN
+            INSERT INTO tm_fts(tm_id, source_kr, target_zh, speaker, file_scope)
+            VALUES (new.id, new.source_kr, new.target_zh, COALESCE(new.speaker, ''), COALESCE(new.file_scope, ''));
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS tm_ad AFTER DELETE ON tm_entries BEGIN
+            DELETE FROM tm_fts WHERE tm_id = old.id;
+        END;
         "#,
     )?;
     Ok(())

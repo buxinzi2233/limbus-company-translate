@@ -4,6 +4,8 @@ use loc_core::{Project, Store};
 use serde_json::json;
 use std::path::PathBuf;
 
+mod commands;
+
 #[derive(Parser)]
 #[command(name = "loc")]
 #[command(author = "Antigravity & Hackimi Localization Team")]
@@ -61,6 +63,57 @@ enum Commands {
         /// 待修复的中文文本
         text: String,
     },
+    /// 索引双语基准语料，全量反哺 TM 翻译记忆库
+    Index {
+        /// 韩文原版生肉目录 (如 references/baseline-KR)
+        #[arg(long)]
+        kr: PathBuf,
+        /// 零协会中文全量目录 (如 references/LLC-2026092102 或 workspace/LLC_zh-CN)
+        #[arg(long)]
+        zh: PathBuf,
+        /// 语料来源标识 (如 zero-association-20260921)
+        #[arg(long, default_value = "zero-association")]
+        origin: String,
+        /// 记忆库优先级权重 (数字越大越优先，默认 100)
+        #[arg(long, default_value_t = 100)]
+        priority: i32,
+    },
+    /// 自动比对生肉与当前汉化，提取增量待译条目至项目数据库 (可导出工单 JSONL)
+    Extract {
+        /// 项目标识代号 (默认使用最新活跃项目)
+        #[arg(long)]
+        project_id: Option<String>,
+        /// 韩文原版生肉目录 (如 Steam 客户端或 references/baseline-KR)
+        #[arg(long)]
+        kr: PathBuf,
+        /// 当前中文工作区或基准目录 (如 workspace/LLC_zh-CN)
+        #[arg(long)]
+        zh: PathBuf,
+        /// 可选：将增量工单导出为独立 JSONL 文件供 AI 或外部协作
+        #[arg(long)]
+        ticket: Option<PathBuf>,
+        /// 是否自动基于 TM 记忆库为 100%/101% 匹配项预填译文 (默认开启)
+        #[arg(long, default_value_t = true)]
+        auto_fill_tm: bool,
+    },
+    /// 将翻译成果从工单文件或项目数据库安全注入回填至游戏 JSON 工作区
+    Inject {
+        /// 目标中文工作区目录 (如 workspace/LLC_zh-CN)
+        #[arg(long)]
+        workspace: PathBuf,
+        /// 韩文模板目录 (当目标工作区不存在该文件时，从此目录复制生肉结构模板)
+        #[arg(long)]
+        kr: Option<PathBuf>,
+        /// 工单 JSONL 路径 (若不指定，则直接从当前项目数据库中读取已翻译条目)
+        #[arg(long)]
+        ticket: Option<PathBuf>,
+        /// 是否在注入前严格执行门禁检查 (若有 FATAL 级错误将拦截写入)
+        #[arg(long, default_value_t = true)]
+        qa_check: bool,
+        /// 忽略门禁警告强行写入
+        #[arg(long)]
+        force: bool,
+    },
 }
 
 #[tokio::main]
@@ -104,21 +157,53 @@ async fn main() -> Result<()> {
             }
         }
         Commands::Search { query, limit } => {
-            let results = store.search_segments_fts(&query, limit)?;
+            let seg_results = store.search_segments_fts(&query, limit)?;
+            let tm_results = store.search_tm_fts(&query, limit)?;
             if cli.json {
-                println!("{}", json!({ "query": query, "total": results.len(), "results": results }));
+                println!(
+                    "{}",
+                    json!({
+                        "query": query,
+                        "segments": seg_results,
+                        "tm_entries": tm_results,
+                        "total_found": seg_results.len() + tm_results.len()
+                    })
+                );
             } else {
-                println!("🔍 检索到 {} 条匹配结果 (关键词: \"{}\"):", results.len(), query);
-                for (i, r) in results.iter().enumerate() {
-                    println!(
-                        "  [{}] 文件: {} | 路径: {}\n      KR: {}\n      ZH: {}\n      说话人: {:?}",
-                        i + 1,
-                        r.relative_path,
-                        r.key_path,
-                        r.source_kr,
-                        r.target_zh.as_deref().unwrap_or("<未翻译>"),
-                        r.speaker.as_deref().unwrap_or("-")
-                    );
+                println!(
+                    "🔍 检索到 {} 条项目活跃词条，{} 条 TM 记忆条目 (关键词: \"{}\"):",
+                    seg_results.len(),
+                    tm_results.len(),
+                    query
+                );
+                if !seg_results.is_empty() {
+                    println!("\n【当前项目活跃词条 (Segments)】:");
+                    for (i, r) in seg_results.iter().enumerate() {
+                        println!(
+                            "  [{}] 文件: {} | 路径: {}\n      KR: {}\n      ZH: {}\n      说话人: {:?}",
+                            i + 1,
+                            r.relative_path,
+                            r.key_path,
+                            r.source_kr,
+                            r.target_zh.as_deref().unwrap_or("<未翻译>"),
+                            r.speaker.as_deref().unwrap_or("-")
+                        );
+                    }
+                }
+                if !tm_results.is_empty() {
+                    println!("\n【翻译记忆库对齐条目 (TM Entries)】:");
+                    for (i, r) in tm_results.iter().enumerate() {
+                        println!(
+                            "  [{}] 来源: {} (权重: {}) | 文件范围: {}\n      KR: {}\n      ZH: {}\n      说话人: {:?}",
+                            i + 1,
+                            r.source_origin,
+                            r.priority,
+                            r.file_scope.as_deref().unwrap_or("*"),
+                            r.source_kr,
+                            r.target_zh,
+                            r.speaker.as_deref().unwrap_or("-")
+                        );
+                    }
                 }
             }
         }
@@ -159,6 +244,111 @@ async fn main() -> Result<()> {
             } else {
                 println!("原文本: {}", text);
                 println!("修复后: {}", fixed);
+            }
+        }
+        Commands::Index {
+            kr,
+            zh,
+            origin,
+            priority,
+        } => {
+            if !kr.exists() {
+                anyhow::bail!("韩文原版目录不存在: {}", kr.display());
+            }
+            if !zh.exists() {
+                anyhow::bail!("中文译文目录不存在: {}", zh.display());
+            }
+            let summary = loc_tm::index_parallel_corpora(&kr, &zh, &origin, priority, &store)?;
+            let total_in_db = store.get_tm_count()?;
+            if cli.json {
+                println!(
+                    "{}",
+                    json!({
+                        "status": "ok",
+                        "scanned_files": summary.scanned_files,
+                        "aligned_entries": summary.aligned_entries,
+                        "total_tm_entries": total_in_db,
+                        "elapsed_ms": summary.elapsed_ms,
+                    })
+                );
+            } else {
+                println!("✓ 双语语料全量对齐与 TM 反哺完成！");
+                println!("  扫描有效双语文件: {} 个", summary.scanned_files);
+                println!("  本轮吸纳记忆词条: {} 条", summary.aligned_entries);
+                println!("  数据库当前 TM 总量: {} 条", total_in_db);
+                println!(
+                    "  耗时: {:.2}s ({} ms)",
+                    summary.elapsed_ms as f64 / 1000.0,
+                    summary.elapsed_ms
+                );
+            }
+        }
+        Commands::Extract {
+            project_id,
+            kr,
+            zh,
+            ticket,
+            auto_fill_tm,
+        } => {
+            let summary = commands::run_extract(
+                &store,
+                project_id,
+                &kr,
+                &zh,
+                ticket.as_deref(),
+                auto_fill_tm,
+            )?;
+            if cli.json {
+                println!("{}", serde_json::to_string(&summary)?);
+            } else {
+                println!("✓ 增量扫描与待译提取完成！");
+                println!("  扫描文件总数: {} 个", summary.scanned_files);
+                println!("  提取条目总数: {} 条", summary.total_segments);
+                println!("  已汉化保留:   {} 条", summary.already_translated);
+                println!("  TM 自动预填:  {} 条", summary.tm_exact_filled);
+                println!("  待翻译生肉:   {} 条", summary.pending_untranslated);
+                if let Some(tp) = ticket {
+                    println!("  工单文件已导出至: {}", tp.display());
+                }
+                println!(
+                    "  耗时: {:.2}s ({} ms)",
+                    summary.elapsed_ms as f64 / 1000.0,
+                    summary.elapsed_ms
+                );
+            }
+        }
+        Commands::Inject {
+            workspace,
+            kr,
+            ticket,
+            qa_check,
+            force,
+        } => {
+            let summary = commands::run_inject(
+                &store,
+                &workspace,
+                kr.as_deref(),
+                ticket.as_deref(),
+                qa_check,
+                force,
+            )?;
+            if cli.json {
+                println!("{}", serde_json::to_string(&summary)?);
+            } else {
+                println!("✓ 翻译成果已安全注入回填游戏 JSON 工作区！");
+                println!("  修改更新文件数: {} 个", summary.modified_files);
+                println!("  成功回填词条数: {} 条", summary.injected_segments);
+                if summary.skipped_untranslated > 0 {
+                    println!("  跳过未翻译词条: {} 条", summary.skipped_untranslated);
+                }
+                if summary.qa_violations > 0 {
+                    println!("  门禁违规警告数: {} 项", summary.qa_violations);
+                }
+                println!(
+                    "  耗时: {:.2}s ({} ms)",
+                    summary.elapsed_ms as f64 / 1000.0,
+                    summary.elapsed_ms
+                );
             }
         }
     }

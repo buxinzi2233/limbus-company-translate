@@ -9,6 +9,10 @@ license.workspace = true
 name = "loc"
 path = "src/main.rs"
 
+[lib]
+name = "loc_cli"
+path = "src/lib.rs"
+
 [dependencies]
 loc-core = { workspace = true }
 loc-parser = { workspace = true }
@@ -22,3 +26,8 @@ serde_json = { workspace = true }
 anyhow = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+walkdir = { workspace = true }
+chrono = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

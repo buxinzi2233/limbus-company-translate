@@ -21,6 +21,18 @@ pub struct SegmentSearchResult {
     pub stage: Stage,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TMSearchResult {
+    pub id: i64,
+    pub hash_kr: String,
+    pub source_kr: String,
+    pub target_zh: String,
+    pub file_scope: Option<String>,
+    pub speaker: Option<String>,
+    pub source_origin: String,
+    pub priority: i32,
+}
+
 #[derive(Clone)]
 pub struct Store {
     conn: Arc<Mutex<Connection>>,
@@ -41,6 +53,10 @@ impl Store {
         Ok(Self {
             conn: Arc::new(Mutex::new(conn)),
         })
+    }
+
+    pub fn raw_connection(&self) -> Arc<Mutex<Connection>> {
+        self.conn.clone()
     }
 
     pub fn upsert_project(&self, project: &Project) -> Result<()> {
@@ -323,6 +339,45 @@ impl Store {
         Ok(conn.last_insert_rowid())
     }
 
+    /// 高性能批量写入 TM 记忆库条目 (单事务提交，吞吐量提升百倍)
+    pub fn upsert_tm_entries_batch(&self, entries: &[TMEntry]) -> Result<usize> {
+        if entries.is_empty() {
+            return Ok(0);
+        }
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction()?;
+        let mut count = 0;
+        {
+            let mut stmt = tx.prepare(
+                r#"
+                INSERT INTO tm_entries (hash_kr, source_kr, target_zh, file_scope, speaker, source_origin, priority, created_at)
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+                "#,
+            )?;
+            for entry in entries {
+                stmt.execute(params![
+                    entry.hash_kr,
+                    entry.source_kr,
+                    entry.target_zh,
+                    entry.file_scope,
+                    entry.speaker,
+                    entry.source_origin,
+                    entry.priority,
+                    entry.created_at.to_rfc3339(),
+                ])?;
+                count += 1;
+            }
+        }
+        tx.commit()?;
+        Ok(count)
+    }
+
+    pub fn get_tm_count(&self) -> Result<i64> {
+        let conn = self.conn.lock().unwrap();
+        let count: i64 = conn.query_row("SELECT COUNT(*) FROM tm_entries", [], |r| r.get(0))?;
+        Ok(count)
+    }
+
     pub fn query_tm_exact(&self, hash_kr: &str) -> Result<Option<TMEntry>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
@@ -350,6 +405,74 @@ impl Store {
             }))
         } else {
             Ok(None)
+        }
+    }
+
+    /// 毫秒级反向全文搜索 TM 记忆库 (短词 < 3字自动走高速 LIKE，长句 >= 3字走 FTS5 trigram 索引)
+    pub fn search_tm_fts(&self, query: &str, limit: usize) -> Result<Vec<TMSearchResult>> {
+        let conn = self.conn.lock().unwrap();
+        let char_count = query.chars().count();
+        if char_count == 0 {
+            return Ok(Vec::new());
+        }
+
+        if char_count < 3 {
+            let pattern = format!("%{}%", query);
+            let mut stmt = conn.prepare(
+                r#"
+                SELECT id, hash_kr, source_kr, target_zh, file_scope, speaker, source_origin, priority
+                FROM tm_entries
+                WHERE source_kr LIKE ?1 OR target_zh LIKE ?1 OR speaker LIKE ?1 OR file_scope LIKE ?1
+                ORDER BY priority DESC, id DESC
+                LIMIT ?2
+                "#,
+            )?;
+            let rows = stmt.query_map(params![pattern, limit], |row| {
+                Ok(TMSearchResult {
+                    id: row.get(0)?,
+                    hash_kr: row.get(1)?,
+                    source_kr: row.get(2)?,
+                    target_zh: row.get(3)?,
+                    file_scope: row.get(4)?,
+                    speaker: row.get(5)?,
+                    source_origin: row.get(6)?,
+                    priority: row.get(7)?,
+                })
+            })?;
+            let mut results = Vec::new();
+            for r in rows {
+                results.push(r?);
+            }
+            Ok(results)
+        } else {
+            let escaped_query = format!("\"{}\"", query.replace('"', "\"\""));
+            let mut stmt = conn.prepare(
+                r#"
+                SELECT tm.id, tm.hash_kr, tm.source_kr, tm.target_zh, tm.file_scope, tm.speaker, tm.source_origin, tm.priority
+                FROM tm_fts fts
+                JOIN tm_entries tm ON tm.id = fts.tm_id
+                WHERE tm_fts MATCH ?1
+                ORDER BY tm.priority DESC, tm.id DESC
+                LIMIT ?2
+                "#,
+            )?;
+            let rows = stmt.query_map(params![escaped_query, limit], |row| {
+                Ok(TMSearchResult {
+                    id: row.get(0)?,
+                    hash_kr: row.get(1)?,
+                    source_kr: row.get(2)?,
+                    target_zh: row.get(3)?,
+                    file_scope: row.get(4)?,
+                    speaker: row.get(5)?,
+                    source_origin: row.get(6)?,
+                    priority: row.get(7)?,
+                })
+            })?;
+            let mut results = Vec::new();
+            for r in rows {
+                results.push(r?);
+            }
+            Ok(results)
         }
     }
 }

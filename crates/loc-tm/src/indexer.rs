@@ -29,6 +29,12 @@ pub fn index_parallel_corpora(
     let mut scanned_files = 0;
     let mut aligned_entries = 0;
 
+    let zh_root_effective = if zh_root.join("LimbusCompany_Data/Lang/LLC_zh-CN").exists() {
+        zh_root.join("LimbusCompany_Data/Lang/LLC_zh-CN")
+    } else {
+        zh_root.to_path_buf()
+    };
+
     for entry in WalkDir::new(kr_root).into_iter().filter_map(|e| e.ok()) {
         let path = entry.path();
         if path.extension().and_then(|s| s.to_str()) != Some("json") {
@@ -38,7 +44,7 @@ pub fn index_parallel_corpora(
         let rel_path = path.strip_prefix(kr_root)?;
         // 处理可能存在的 KR_ 前缀 (如 KR_StoryData/ -> StoryData/)
         let normalized_rel_str = rel_path.to_string_lossy().replace("KR_", "");
-        let zh_file = zh_root.join(&normalized_rel_str);
+        let zh_file = zh_root_effective.join(&normalized_rel_str);
 
         if !zh_file.exists() {
             continue;
@@ -70,6 +76,7 @@ pub fn index_parallel_corpora(
             .map(|item| (item.pointer.as_str(), item.source_kr.as_str()))
             .collect();
 
+        let mut batch = Vec::with_capacity(kr_items.len());
         for kr_item in &kr_items {
             if let Some(&zh_trans) = zh_map.get(kr_item.pointer.as_str()) {
                 // 如果中文译文与韩文原文相同 (说明未翻译)，则跳过
@@ -90,9 +97,13 @@ pub fn index_parallel_corpora(
                     created_at: chrono::Utc::now(),
                 };
 
-                store.upsert_tm_entry(&tm_entry)?;
-                aligned_entries += 1;
+                batch.push(tm_entry);
             }
+        }
+
+        if !batch.is_empty() {
+            let count = store.upsert_tm_entries_batch(&batch)?;
+            aligned_entries += count;
         }
 
         scanned_files += 1;
