@@ -1,0 +1,551 @@
+/* Motion belongs to structure and state; reading surfaces stay still. */
+:root {
+  --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-fast: 160ms;
+  --motion-enter: 480ms;
+}
+.topbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+.motion-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+}
+.motion-toggle[aria-pressed='true'] {
+  border-color: #b7c5a5;
+  background: #e4e9d8;
+  color: var(--green);
+}
+.hero,
+.page-intro {
+  position: relative;
+}
+.hero::before,
+.page-intro::before {
+  content: '';
+  position: absolute;
+  inset: -1px auto auto 0;
+  width: 72px;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    #497761 0 60%,
+    #d1b975 60% 82%,
+    #b46a4c 82%
+  );
+  transform-origin: left;
+  pointer-events: none;
+  z-index: 1;
+}
+.hero-copy > p,
+.page-intro p {
+  font-size: 13px;
+}
+.instrument-value > .eyebrow,
+.instrument-caption,
+.metric > .eyebrow,
+.section-title .eyebrow,
+.results-heading > .eyebrow {
+  font-size: 11px;
+}
+.file-reference,
+.pane-label,
+.context {
+  font-size: 12px;
+}
+.file-reference code {
+  font-size: 11px;
+}
+.translation-editor {
+  position: relative;
+  transition:
+    border-color var(--motion-fast),
+    box-shadow var(--motion-fast);
+}
+.translation-editor:focus-within {
+  border-color: #829a78;
+  box-shadow:
+    0 0 0 1px #829a7826,
+    0 8px 24px #24493908;
+}
+.target-pane {
+  transition: background-color var(--motion-fast);
+}
+.target-pane:focus-within {
+  background: #f3f6e9;
+}
+.translation-editor[data-confirmed='true'] .stage {
+  background: #dce8d5;
+  color: #305839;
+}
+.inline-message {
+  border-left: 3px solid #7e9868;
+}
+.inline-message.error {
+  border-left-color: #ad664b;
+}
+.audit-page > section {
+  margin-top: 28px;
+}
+.audit-page .section-title {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+.audit-page .section-title > span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.audit-page .search-result {
+  border-left: 2px solid #c2cfb5;
+  padding: 20px 24px;
+  background: #f8f9f1;
+}
+.audit-page .search-result h3,
+.audit-page .search-result h4 {
+  font-size: 15px;
+  font-weight: 500;
+  margin: 0 0 14px;
+}
+.audit-page .search-result p {
+  font-size: 13px;
+  line-height: 1.9;
+  margin-top: 8px;
+}
+.audit-page .search-result code {
+  font-size: 12px;
+}
+.audit-page summary {
+  padding: 12px 0;
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  cursor: pointer;
+}
+.audit-page summary:focus-visible {
+  outline: 3px solid #9a6b23;
+  outline-offset: 3px;
+}
+/* These effects never wait for JavaScript or hide available content. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero::before,
+  .page-intro::before {
+    animation: rule-unfold 460ms var(--ease-settle) backwards;
+  }
+  .nav-item.active::before {
+    animation: marker-unfold 260ms var(--ease-settle) backwards;
+  }
+  .audit-page details[open] > p {
+    animation: materialize 220ms ease-out backwards;
+  }
+  .hero-copy > .eyebrow,
+  .page-intro > .eyebrow {
+    animation: materialize 260ms ease-out backwards;
+  }
+  .hero h2,
+  .page-intro h2 {
+    animation: title-settle var(--motion-enter) var(--ease-settle) backwards;
+  }
+  .hero-copy > p,
+  .page-intro > p,
+  .instrument-value {
+    animation: materialize 420ms ease-out 70ms backwards;
+  }
+  .metrics .metric {
+    animation: data-arrive 440ms var(--ease-settle) backwards;
+  }
+  .metric::after {
+    animation: rule-unfold 420ms var(--ease-settle) 120ms backwards;
+  }
+  .metric:nth-child(2) {
+    animation-delay: 45ms;
+  }
+  .metric:nth-child(2)::after {
+    animation-delay: 165ms;
+  }
+  .metric:nth-child(3) {
+    animation-delay: 90ms;
+  }
+  .metric:nth-child(3)::after {
+    animation-delay: 210ms;
+  }
+  .metric:nth-child(4) {
+    animation-delay: 135ms;
+  }
+  .metric:nth-child(4)::after {
+    animation-delay: 255ms;
+  }
+  .brand-mark i {
+    transform-origin: bottom;
+    animation: bar-settle 520ms var(--ease-settle) backwards;
+  }
+  .brand-mark i:nth-child(2) {
+    animation-delay: 80ms;
+  }
+  .brand-mark i:nth-child(3) {
+    animation-delay: 160ms;
+  }
+  .overview-bottom,
+  .page-enter > .toolbar,
+  .page-enter > .corpus-form,
+  .page-enter > .focus-status,
+  .audit-page > section {
+    animation: materialize 360ms ease-out backwards;
+  }
+  .instrument-crosshair {
+    animation: crosshair-appear 400ms ease-out backwards;
+  }
+  .instrument-ticks {
+    animation: fade-in 500ms ease-out 200ms backwards;
+  }
+  .instrument-scale {
+    animation: fade-in 500ms ease-out 320ms backwards;
+  }
+  .instrument-sweep {
+    transform-box: view-box;
+    transform-origin: center;
+    animation: calibrate-sweep 1100ms var(--ease-settle) 240ms backwards;
+  }
+  .instrument-trajectory {
+    stroke-dasharray: 1;
+    animation: trajectory-draw 900ms var(--ease-settle) backwards;
+  }
+  .instrument-beacon {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: beacon-settle 600ms var(--ease-settle) 500ms backwards;
+  }
+  .instrument-ping {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: beacon-ping 850ms ease-out 950ms backwards;
+  }
+  .progress-orbit {
+    animation: calibrate 850ms var(--ease-settle) backwards;
+    transition: stroke-dasharray 500ms var(--ease-settle);
+  }
+  .inline-message[role='status'] {
+    animation: message-arrive 260ms var(--ease-settle) backwards;
+  }
+  .hero-ambience i {
+    animation:
+      particle-rise var(--d, 22s) linear var(--dl, 0s) infinite,
+      particle-sway var(--ds, 7s) ease-in-out var(--dl, 0s) infinite alternate;
+  }
+  .scanline {
+    animation: scanline-sweep 13s linear infinite;
+  }
+  .instrument {
+    animation: grid-drift 46s linear infinite;
+  }
+  .dial-precess {
+    animation: dial-precess 36s linear infinite;
+  }
+  .dial-spin-slow {
+    animation: dial-precess 120s linear infinite;
+  }
+  .orbit-precess {
+    animation: dial-precess 64s linear infinite;
+  }
+  .corner-mark {
+    animation: mark-blink 4.8s ease-in-out infinite;
+  }
+  .corner-mark-alt {
+    animation-delay: -2.4s;
+  }
+  .batch-progress i {
+    transition: width 340ms var(--ease-settle);
+  }
+  .calibrating-outer {
+    transform-box: view-box;
+    transform-origin: center;
+    animation: spin 1.3s linear infinite;
+  }
+  .calibrating-inner {
+    transform-box: view-box;
+    transform-origin: center;
+    animation: spin 2s linear infinite reverse;
+  }
+  .connection-dot.pending {
+    animation: pulse-dot 1.1s ease-in-out infinite;
+  }
+  .section-title h3::before {
+    transform-origin: bottom;
+    animation: bar-settle 380ms var(--ease-settle) 60ms backwards;
+  }
+  .nav-item > svg,
+  .primary-link svg,
+  .next-action a svg,
+  .solid-button svg,
+  .outline-button svg,
+  .text-button svg,
+  .icon-button svg {
+    transition: transform 220ms var(--ease-settle);
+  }
+}
+.motion-toggle,
+.refresh-button,
+.search-field,
+.corpus-form {
+  transition:
+    border-color var(--motion-fast),
+    background-color var(--motion-fast),
+    color var(--motion-fast);
+}
+.search-field:focus-within,
+.corpus-form:focus-within {
+  border-color: #6f8863;
+  background-color: #f3f6e9;
+}
+.primary-link:focus-visible svg,
+.primary-link:hover svg {
+  transform: translate(3px, -3px);
+}
+.next-action a:focus-visible svg,
+.next-action a:hover svg {
+  transform: translateX(4px);
+}
+.nav-item:focus-visible > svg,
+.nav-item:hover > svg {
+  transform: translateY(-2px);
+}
+.motion-toggle:hover,
+.motion-toggle:focus-visible {
+  background: #e4e9d8;
+  color: var(--green);
+}
+.solid-button:active:not(:disabled) svg,
+.outline-button:active:not(:disabled) svg,
+.text-button:active:not(:disabled) svg,
+.icon-button:active:not(:disabled) svg {
+  transform: scale(0.9);
+}
+@keyframes marker-unfold {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes particle-rise {
+  0% {
+    bottom: -4%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    bottom: 104%;
+    opacity: 0;
+  }
+}
+@keyframes particle-sway {
+  from {
+    transform: translateX(-9px);
+  }
+  to {
+    transform: translateX(9px);
+  }
+}
+@keyframes scanline-sweep {
+  0% {
+    top: -18%;
+    opacity: 0;
+  }
+  4% {
+    opacity: 1;
+  }
+  36% {
+    top: 112%;
+  }
+  37%,
+  100% {
+    top: 112%;
+    opacity: 0;
+  }
+}
+@keyframes grid-drift {
+  from {
+    background-position:
+      0 0,
+      0 0,
+      0 0;
+  }
+  to {
+    background-position:
+      0 0,
+      0 28px,
+      28px 0;
+  }
+}
+@keyframes dial-precess {
+  to {
+    transform: rotate(1turn);
+  }
+}
+@keyframes mark-blink {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes calibrate-sweep {
+  from {
+    transform: rotate(-90deg);
+  }
+  to {
+    transform: rotate(270deg);
+  }
+}
+@keyframes beacon-ping {
+  0% {
+    opacity: 0;
+    transform: scale(1);
+  }
+  22% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(3.4);
+  }
+}
+@keyframes bar-settle {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.78);
+  }
+}
+@keyframes rule-unfold {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes materialize {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes title-settle {
+  from {
+    opacity: 0.45;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes data-arrive {
+  from {
+    opacity: 0.45;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes crosshair-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.17;
+  }
+}
+@keyframes trajectory-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes beacon-settle {
+  from {
+    opacity: 0.4;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes calibrate {
+  from {
+    stroke-dasharray: 0 100;
+  }
+}
+@keyframes message-arrive {
+  from {
+    opacity: 0.5;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* Local control can only reduce motion, never override the OS preference. */
+.app-shell[data-motion='reduced'] *,
+.app-shell[data-motion='reduced'] *::before,
+.app-shell[data-motion='reduced'] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+@media (max-width: 640px) {
+  .topbar-controls {
+    gap: 8px;
+  }
+  .motion-toggle {
+    font-size: 12px;
+    padding: 5px;
+    gap: 5px;
+  }
+  .topbar-controls .connection {
+    font-size: 12px;
+  }
+  .audit-page .section-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
