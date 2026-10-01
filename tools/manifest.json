@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "status": "historical_maintenance_tools",
+  "files": [
+    {
+      "path": "corpus/build_names.py",
+      "sha256": "57346131a1e1ce8499db08573573fdef691db9dbe2bba2ed3fcd67ab4610fe1b"
+    },
+    {
+      "path": "corpus/build_reference.py",
+      "sha256": "67920f8027b883ef699216495920861aac0e20dd5af2df52fe2aa440446c2e79"
+    },
+    {
+      "path": "source_audit/assets.py",
+      "sha256": "bd4322376b707cb015cbbd4e0be0428020b98baecad2dc442d699d4b892a9c92"
+    },
+    {
+      "path": "source_audit/boundary.py",
+      "sha256": "da210c5f88825cb8930e2dfe4a5dc11f3369677cb8710ac7b7b3a409308f1165"
+    },
+    {
+      "path": "source_audit/fields.py",
+      "sha256": "e875daf2a0cc009f9934a9b86e2b72944b56a4e36510ebcadd99137c2b8f523d"
+    },
+    {
+      "path": "source_audit/history.py",
+      "sha256": "d57cb84f52aecbeefddc3853b4017eb35cc94fdbdbcb1af83a23b35f3094e98f"
+    },
+    {
+      "path": "source_audit/json_data.py",
+      "sha256": "85b0936aab7d3796524bde1de95b23d219ffe45ba6667facb8d4760673440afd"
+    },
+    {
+      "path": "source_audit/requirements.txt",
+      "sha256": "39cc8e03d1f166aa7704bfce61ae56b39858fd1cee2aa542c39ec13b9ef8d4a2"
+    },
+    {
+      "path": "source_audit/verify_boundary.py",
+      "sha256": "87b35e17eef999197688fd613e2f9cc6a72d0deb83c6ef62d3226043ba60fd9a"
+    },
+    {
+      "path": "wiki_reference/model.py",
+      "sha256": "cfa23faf1a796db0f7d1abbf228b8f17e1d030fa38ca7fbe9cd845fb35525375"
+    },
+    {
+      "path": "wiki_reference/search.py",
+      "sha256": "cea67fe6bb26f88750c7fc722b46af78864f9d575246e54ab03536fb1a557a1a"
+    },
+    {
+      "path": "wiki_reference/serve.py",
+      "sha256": "5da7450722341b420df5184545fde199460ba2829d024d07d96dfabb82645ea4"
+    },
+    {
+      "path": "wiki_reference/store.py",
+      "sha256": "46d9d33d3a5d3a06801f7f3cad2893f7b2b3c8399d166a49fc9ef93db5f05cbe"
+    },
+    {
+      "path": "wiki_reference/terms.py",
+      "sha256": "fa5fcff4110cffc028794fd95e40968a978324561898efbc0cbd31035ecb317c"
+    },
+    {
+      "path": "wiki_reference/verify.py",
+      "sha256": "f2c7995d714169caeb8141721fd3de1a73946fb9df24e32aed63c045c4327547"
+    }
+  ]
+}

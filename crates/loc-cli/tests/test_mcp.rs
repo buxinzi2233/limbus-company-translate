@@ -40,7 +40,7 @@ async fn real_stdio_client_exercises_scoped_tools_and_write_boundaries() -> Resu
         }))?;
         let client = ().serve(transport).await?;
         let tools = client.list_all_tools().await?;
-        assert_eq!(tools.len(), 9);
+        assert_eq!(tools.len(), 13);
         let write_tool = tools.iter().find(|tool| tool.name == "submit_draft").unwrap();
         assert_eq!(write_tool.annotations.as_ref().unwrap().read_only_hint, Some(false));
         assert_eq!(write_tool.annotations.as_ref().unwrap().destructive_hint, Some(true));

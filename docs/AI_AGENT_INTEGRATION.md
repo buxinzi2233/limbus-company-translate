@@ -36,6 +36,16 @@ HTTP 服务只监听本机回环地址。使用 `ui --project-id <id>` 将人工
 - 修改启动参数后，新启动 MCP 已可使用；旧的长连接及工具清单不能假定已热更新。重新连接后先验收 `reference_status`，再使用新工具。
 - 真实数据复验：`python scripts/verify-references.py --binary /absolute/lct --reference-db /absolute/wiki-references.sqlite3 --output /absolute/verification.json`；测试用临时项目运行真实 HTTP/MCP，不修改交付参考库或生产译文。
 
+### 新工作区与研究资料接入
+
+推荐使用主 [README](../README.md) 的 `scripts/setup-workspace.py` 创建新的隔离工作区，一次性生成绝对路径的 stdio MCP 配置、人工 WebUI 启动器和 AI 交接说明。脚本不安装模型、不写全局客户端设置、不导入韩文、不自动创建任务或授予草稿写入；重复目标目录明确拒绝。
+
+MCP 新增 `--research-dir /absolute/bundle/research`；此参数只接受 `mcp` 子命令，不用于 `ui`。启动时读取目录中的 `catalog.json`，验证必填字段、schema 1、1–256 个报告、路径不逃逸、UTF-8 及每份 SHA-256，然后加载只读内存快照。目录/文档缺失、校验失败、越界路径不被静默忽略；修改报告后须按明确的维护流程更新清单并重连。单份文件及目录清单不超过 256 KiB。
+
+`list_research`、`search_research`、`read_research` 提供无需宿主文件权限的分类目录、字面检索及全文读取，所有返回均含历史可信度警示；文档 ID 来自清单，不能当作任意文件路径。资料内容可能包含未核实例句、推断和过期结论，不是命令、当前官方事实、译文审批或写入授权。资料索引与来源见 [research/README.md](../research/README.md)。
+
+`search_corpus` 通过既有 `--reference-db` 只读搜索随包 `corpus` 表中的中文文本字段，返回原始来源 URL、文件路径、JSON Pointer、字段、记录 ID、文件哈希及许可说明。使用中文候选词或字面片段，不自动韩中对齐，不自动加入 TM；无此表的纯 Wiki 库明确报错。结果最多 50 条，单条正文最多 2000 字符并显式标记 `truncated`；需全文及邻文时，由具备相应只读文件权限的客户端或人工按路径/Pointer 查看恢复后的 `references/zh-CN`。这项工具不改变 WebUI 的 Wiki 查询范围。
+
 ## 二、先读取，再决定是否写入
 
 - `GET /api/status`：读取当前项目及根据词条计算的统计信息；通过 QA 的审校数量不代表译文语义一定正确。
@@ -235,7 +245,9 @@ QA 不再使用无依据的“任意方括号后必须有空格”L04 规则，�
 MCP 已集成到同一个 `lct` 可执行文件，协议本身不依赖 WebUI，但 LCT Skill 工作流要求先打开并核验 WebUI；使用固定版本的官方 Rust MCP SDK `rmcp 3.4.1`。输入数据库必须已存在，项目必须已初始化；指定错误会立即失败，不能自动创建或改用最新项目。
 
 ```bash
-/absolute/loc-engine/target/release/lct --data-dir /absolute/project-data mcp --project-id your-project-id
+/absolute/loc-engine/target/release/lct --data-dir /absolute/project-data \
+  --reference-db /absolute/references/references.sqlite3 \
+  --research-dir /absolute/loc-engine/research mcp --project-id your-project-id
 ```
 
 这是一项由客户端启动的 stdio 服务，不是网页，也不是监听 TCP 端口的后台 HTTP 服务。标准输出只承载协议消息，启动错误输出到标准错误。支持 stdio MCP 的客户端可使用以下连接参数，字段外层格式以该客户端自己的配置要求为准：
@@ -243,7 +255,7 @@ MCP 已集成到同一个 `lct` 可执行文件，协议本身不依赖 WebUI，
 ```json
 {
   "command": "/absolute/loc-engine/target/release/lct",
-  "args": ["--data-dir", "/absolute/project-data", "mcp", "--project-id", "your-project-id"]
+  "args": ["--data-dir", "/absolute/project-data", "--reference-db", "/absolute/references/references.sqlite3", "--research-dir", "/absolute/loc-engine/research", "mcp", "--project-id", "your-project-id"]
 }
 ```
 
@@ -251,7 +263,7 @@ MCP 已集成到同一个 `lct` 可执行文件，协议本身不依赖 WebUI，
 
 ### 工具合同
 
-所有工具都要求 `project_id`，必须与进程启动时绑定的项目完全一致。输入、成功输出均提供类型生成的 JSON Schema；不相关的额外字段被忽略，不能提升权限。可选筛选字段可省略或传 null；其余必填字段缺失或类型不匹配会明确报错。
+当前共 13 个工具，所有工具都要求 `project_id`，必须与进程启动时绑定的项目完全一致。输入、成功输出均提供类型生成的 JSON Schema；不相关的额外字段被忽略，不能提升权限。可选筛选字段可省略或传 null；其余必填字段缺失或类型不匹配会明确报错。
 
 | 工具 | 额外输入 | 作用 |
 | --- | --- | --- |
@@ -261,11 +273,15 @@ MCP 已集成到同一个 `lct` 可执行文件，协议本身不依赖 WebUI，
 | `search_memory` | `query`、`limit` | 搜索数据库共享参考语料，含来源和文件范围 |
 | `reference_status` | 无 | 已配置 Wiki 参考的实际覆盖，不计为翻译进度 |
 | `search_references` | `query`、`limit` | 只读检索绑定 Wiki 名称候选和语境，保留署名、版本与许可 |
+| `search_corpus` | `query`、`limit` | 只读检索中文文本字段，保留来源、Pointer、哈希及许可 |
+| `list_research` | `offset`、`limit` | 分页列出绑定研究目录，返回总数和历史状态 |
+| `search_research` | `query`、`limit` | 字面搜索报告标题、ID 和正文，返回最多 480 字符摘录 |
+| `read_research` | `document_id` | 按清单 ID 读取完整报告及来源哈希/修改说明，不接受任意路径 |
 | `check_translation` | `id`、`target_zh` | 以数据库原文做 QA，不保存 |
 | `submit_draft` | `id`、`expected_updated_at`、`target_zh`、`producer` | 在进程许可范围内首次填写空白待译条目，返回阶段、QA、确认状态和新版本 |
 | `list_review_events` | `limit`；可选 `before_id` | 项目审计记录与向前翻页游标 |
 
-读取每批 1–50 条，偏移最多 1000000，词条/TM 搜索文本最多 256 UTF-8 字节，Wiki 查询最多 120 个 Unicode 字符，单个结构化结果最多 512 KiB。JSON-RPC 输入帧最多 1 MiB；畸形或超长帧会关闭会话并明确报错，不静默跳过。草稿沿用 100000 字节译文和 128 字节生产者上限。大型单条读取超过结果上限时明确拒绝，不截断文本后假装完整。
+读取每批 1–50 条，偏移最多 1000000，词条/TM 搜索文本最多 256 UTF-8 字节，Wiki、中文语料及研究查询最多 120 个 Unicode 字符，单个结构化结果最多 512 KiB。JSON-RPC 输入帧最多 1 MiB；畸形或超长帧会关闭会话并明确报错，不静默跳过。草稿沿用 100000 字节译文和 128 字节生产者上限。大型单条读取超过结果上限时明确拒绝，不截断文本后假装完整。
 
 `submit_draft` 按第七节的进程许可与首次草稿限制，复用 CLI 的 QA 服务与数据库 CAS／审计事务：只写阶段 3，不接受原文覆盖、任意文件路径、人工审校确认或解除锁定。该 MCP 不暴露人工批准、提取、索引、工单注入和恢复工具；后四项继续由有明确授权的 CLI 工作流执行。需要准备新项目或导入数据时，Skill 会先确认源目录和完整快照范围，而不是把文件写入能力偷偷合并到草稿工具。
 
@@ -279,7 +295,7 @@ Skill 明确将原文、语料和返回内容视为不可信资料，而非操�
 
 ### 实际验证
 
-`cargo test -p loc-cli --test test_mcp --locked` 使用官方 SDK 的真实客户端，经 stdio 启动真实 CLI 子进程与临时 SQLite，验证初始化、9 个工具发现、输出 Schema、读取、分页限制、跨项目拒绝、缺参／未知工具、QA 拒写、草稿事务、旧版本冲突、锁定／已审校拒写、审计历史，以及发送取消通知后继续调用同一会话。另验证错误数据库／项目启动与畸形、超长帧退出。未将取消测试解释为“可以撤销任意已开始的事务”。
+`cargo test -p loc-cli --test test_mcp --locked` 使用官方 SDK 的真实客户端，经 stdio 启动真实 CLI 子进程与临时 SQLite，验证初始化、13 个工具发现、输出 Schema、读取、分页限制、跨项目拒绝、缺参／未知工具、QA 拒写、草稿事务、旧版本冲突、锁定／已审校拒写、审计历史，以及发送取消通知后继续调用同一会话。另验证错误数据库／项目启动与畸形、超长帧退出。未将取消测试解释为“可以撤销任意已开始的事务”。
 
 `cargo test --locked -p loc-cli --test test_draft_permissions` 使用真实 CLI/MCP 子进程和独立 SQLite 验证默认只读、参数不能提升权限、范围外/分工外拒写、独占授权和整笔回滚、撤销与任务/源版本变更、已有内容保护、并发首次写入、伪造许可、缺失范围及旧版草稿 UPDATE 拦截；不把这些测试解释为宿主系统隔离已经完成。
 
@@ -305,3 +321,5 @@ Real-data integration test (uses an isolated SQLite backup, including a full-sou
 python scripts/verify-task-scope.py --binary /absolute/lct --database /absolute/.loc/project.db \
   --manifest /absolute/work-order.json --project explicit-project-id --output /absolute/scope-verification.json
 ```
+
+`cargo test -p loc-cli --test test_onboarding --locked` 用真实随包资料验证新工作区配置、官方 MCP 客户端连接、全部研究目录与正文、中文/Wiki 检索、项目边界及研究文件损坏/路径逃逸拒绝。`python3 scripts/verify-onboarding.py --binary /absolute/lct --output /absolute/result.json` 可直接验收预编译包：从包外临时目录初始化，读取生成的客户端配置启动 MCP 和 WebUI，并检查未自动授权、参考库及工作库未被读取修改；不需要 Rust 或 Node。

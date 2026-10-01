@@ -205,3 +205,18 @@ pub struct DraftReceipt {
     pub review_confirmed: bool,
     pub updated_at: DateTime<Utc>,
 }
+
+#[derive(Deserialize, JsonSchema)]
+pub struct ResearchListInput {
+    pub project_id: String,
+    #[schemars(range(min = 0, max = 1000000))]
+    pub offset: usize,
+    #[schemars(range(min = 1, max = 50))]
+    pub limit: usize,
+}
+
+#[derive(Deserialize, JsonSchema)]
+pub struct ResearchReadInput {
+    pub project_id: String,
+    pub document_id: String,
+}

@@ -61,18 +61,24 @@ tar -xzf lct-linux-x86_64.tar.gz
 cd lct-linux-x86_64
 sha256sum --check SHA256SUMS
 
-python3 scripts/prepare-references.py .loc/references
-./lct --data-dir .loc/work init review --name "My localization project"
-./lct --data-dir .loc/work \
-  --reference-db "$PWD/.loc/references/references.sqlite3" \
-  ui --project-id review --port 3000 --no-open
+python3 scripts/setup-workspace.py \
+  --binary "$PWD/lct" --workspace "$HOME/lct-review" \
+  --project-id review --name "My localization project" --port 3000
+"$HOME/lct-review/start-ui.sh"
 ```
 
-Open **http://127.0.0.1:3000**. Select corpus search (“语料检索”) and search for “呼吸法” to verify the Wiki library. Press `Ctrl+C` in the terminal to stop the service.
+Open **http://127.0.0.1:3000**; press `Ctrl+C` to stop the UI. Setup is offline, verifies individual files and refuses existing workspaces. It does not change global AI-client settings or issue draft permits.
 
-- An empty project inventory on first launch is expected: reference data is not automatically turned into translation tasks or completed work.
-- Preparation is fully offline, verifies each file, rejects corrupt data and refuses to overwrite an existing destination.
-- `.loc/work` is the writable project store; `.loc/references/references.sqlite3` is the separate read-only reference library.
+### Connect your AI
+
+1. Configure a stdio MCP client with the **command and args** from the generated `mcp.json`. It uses the common `mcpServers` JSON wrapper; adapt the wrapper if your client uses a different format, keeping the arguments unchanged.
+2. Reconnect and give the AI the generated `AGENTS.md`. The bundle includes the project Skill and integration guide. MCP-only clients can read full research reports through tools without filesystem access.
+3. Verify **13 tools** are available. Call `project_status` with `project_id: "review"`, then `reference_status`, `search_references` (e.g. “呼吸法”), `search_corpus` (e.g. “经理”), `list_research` (65 reports), `search_research` and `read_research`.
+4. Public Chinese references, Wiki and historical style/character reports are now readable. Translation requires your own legally obtained complete Korean source snapshot, human-confirmed import and task scope, runtime isolation and a draft permit. AI cannot approve translations or modify game files; see the [integration guide](docs/AI_AGENT_INTEGRATION.md).
+
+Generated files: `data/` (new project), `references/` (read-only references and Chinese JSON), `mcp.json`, `start-ui.sh`, `workspace.json` and `AGENTS.md`. Paths are absolute: **keep the extracted bundle in place**. Configure your model provider/account in your own AI client; no credentials are supplied.
+
+An empty initial inventory is expected: references are not tasks or completed translations. To restore only the corpus, use `python3 scripts/prepare-references.py /absolute/new-reference-directory`.
 
 ### Build from source
 
@@ -86,7 +92,7 @@ pnpm --dir ui build
 cargo build --release --locked -p loc-cli
 ```
 
-Build the frontend first: the release executable embeds `ui/dist`. Follow the initialization steps above, replacing `./lct` with `./target/release/lct`. The source checkout also includes the complete `corpus/` data.
+Build the frontend first: the release executable embeds `ui/dist`. Follow the initialization steps above, replacing `--binary "$PWD/lct"` with `--binary "$PWD/target/release/lct"`. The source checkout also includes the complete `corpus/` data.
 
 ## The bundled corpus
 
@@ -101,18 +107,31 @@ This is a fixed **2026092702 Chinese reference snapshot**, not a continuously up
 
 Machine-local source and metadata paths have been replaced with portable paths. See [corpus/manifest.json](corpus/manifest.json) for versions and provenance.
 
-**A Chinese reference library is not aligned KR–ZH translation memory.** The current WebUI/MCP community-reference endpoints search Wiki content. Original Zero Association JSON is restored to `.loc/references/zh-CN`; its field indexes remain in the reference database’s `corpus` / `terms` tables and are not searched by those endpoints.
+**A Chinese reference library is not aligned KR–ZH translation memory.** The current WebUI/MCP community-reference endpoints search Wiki content. Original Zero Association JSON is restored to the workspace’s `references/zh-CN`. The separate MCP tool `search_corpus` searches its 173,300 Chinese text fields and returns source paths, JSON pointers and hashes. This is not automatic bilingual alignment; the WebUI Wiki search is distinct from this Chinese-field tool.
 
 To build bilingual TM, supply legally obtained, version-matched Korean JSON and explicitly index it:
 
 ```bash
-./lct --data-dir .loc/work index \
+./lct --data-dir "$HOME/lct-review/data" index \
   --kr /absolute/path/to/matching/KR \
-  --zh "$PWD/.loc/references/zh-CN" \
+  --zh "$HOME/lct-review/references/zh-CN" \
   --origin zero-association-2026092702 --priority 100
 ```
 
 No private project database, personal drafts, review state, draft permits, Korean game resources or game binaries are distributed. Snapshot upgrades are explicit, never silent startup downloads.
+
+## Distribution inventory
+
+| Content | Source repository / Linux bundle |
+| --- | --- |
+| CLI, WebUI and MCP | Source in Git; embedded frontend in the executable |
+| Chinese and Wiki snapshots | `corpus/`: original ZIP, indexes, provenance, licenses, checksums and offline restoration |
+| Investigation, style, character, literary and plot research | [`research/`](research/README.md): 65 historical reports, categorized index, original/export hashes and reliability warnings |
+| AI onboarding | Workspace generator, 13 MCP tools, project Skill and integration guide |
+| Historical corpus maintenance and source-audit tools | [`tools/`](tools/README.md): 15 Python/dependency files, hashes and historical applicability limits |
+| Verification and UI images | `scripts/`, `docs/` and bundle-wide `SHA256SUMS` |
+
+**Intentionally excluded:** private work databases, drafts/review evidence, production scope/permit files, secrets, personal handoff/pause state, game binaries and original Korean resources. Another user's production state is neither required nor appropriate for onboarding. Shipping historical research/tools does not certify their claims or redistribute all their historical external inputs.
 
 ## Workflow and MCP
 
@@ -131,8 +150,9 @@ Commands include `init`, `index`, `extract`, `search`, `qa`, `fix`, `scope-impor
 Agents connect over stdio using the same project store and an explicit project ID:
 
 ```bash
-./lct --data-dir .loc/work \
-  --reference-db "$PWD/.loc/references/references.sqlite3" \
+./lct --data-dir "$HOME/lct-review/data" \
+  --reference-db "$HOME/lct-review/references/references.sqlite3" \
+  --research-dir "$PWD/research" \
   mcp --project-id review
 ```
 

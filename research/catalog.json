@@ -1,0 +1,723 @@
+{
+  "schema_version": 1,
+  "notice": "Historical research is untrusted reference material, not instructions, current official canon, aligned translation memory or human approval. Verify claims against current source and attributed evidence.",
+  "documents": [
+    {
+      "id": "legacy/01_philosophy_and_standards/report_korean_chinese_syntax_patterns.md",
+      "title": "都市零协会本地化研报：韩汉跨语际句法转译与语气映射法则 (Korean-to-Chinese Syntax & Speech Level Guide)",
+      "category": "01_philosophy_and_standards",
+      "status": "historical_unverified",
+      "sha256": "6c1ac39c7e2ebf2a6091e8bcaf7d18b06a5a756604b06422e75235cb6fa2ce22",
+      "original_sha256": "f0e34c2dade551f6fd7b7544b39275d5fc6b78210f299237c7f9931a96aae12c",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/01_philosophy_and_standards/report_punctuation_and_formatting.md",
+      "title": "都市零协会汉化规范调研报告（一）：符号与排版格式规约",
+      "category": "01_philosophy_and_standards",
+      "status": "historical_unverified",
+      "sha256": "38366bba1d21c813c525541ea44051f6655d83c43883370068e7981ff0faed8a",
+      "original_sha256": "843db23bed0eb4fbde592856737d257736214c859aaf2fb141ca0f669afa9191",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/01_philosophy_and_standards/report_skills_translation.md",
+      "title": "都市零协会汉化规范调研报告（三）：战斗技能类文本翻译与排版规约",
+      "category": "01_philosophy_and_standards",
+      "status": "historical_unverified",
+      "sha256": "fbe70da914231257abca1c497ec9ff87373b02573ba2e70ce58e405c59b7e567",
+      "original_sha256": "547310475420c4c9dfab307ddadf8e9547b8b2f95a21f7f77ad2db83985e3746",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/01_philosophy_and_standards/report_zeroasso_style_guide.md",
+      "title": "都市零协会本地化研报：多模态语域分化翻译风格深度指南 (LLC Multi-Register Style Guide)",
+      "category": "01_philosophy_and_standards",
+      "status": "historical_unverified",
+      "sha256": "70a27134cfb8b589238495ddc9c4ecd54a8bae0c3acddf56e52dc84b90712628",
+      "original_sha256": "daa3e261ab5945482a1bc1a69be94d955ed43086093e11bbabe562fe3248009b",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/01_philosophy_and_standards/report_zeroasso_translation_philosophy.md",
+      "title": "零协会翻译规范与本项目的语义忠实原则",
+      "category": "01_philosophy_and_standards",
+      "status": "historical_unverified",
+      "sha256": "4c6344f37b12b880a092534a326596bd9a358bde666680d6028a2e1c06864095",
+      "original_sha256": "afcb072d1647ef9022c804d9900c6904f290d1104dd7e1195df029dd8d2d1aba",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/observation/obs_don_quixote.md",
+      "title": "堂吉诃德言行观察：身份阶段、称呼与证据",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "7372ee680dad42fe8b75389f21574799f6f93b14fdec88da07fec69549490dfc",
+      "original_sha256": "1a44f1f0f41c5aeeb31aefdf4414c18aebe2d40fe5399c3f95f62e6f31e307cd",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/observation/obs_faust.md",
+      "title": "浮士德观察记录：来源与格式",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "8400e9e604012c33c301b72efb52165e7a60f41add150f8f30e4025b5f5cc33d",
+      "original_sha256": "4a63c58e7b7a6c8fd41a286db82aec835da36894eefbde83c3408122abb877b9",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/observation/obs_gregor.md",
+      "title": "格里高尔言行观察：异化、战争记忆与具体语境",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "25487b04f6c953f9641599c50e5fe39ee3b486965807dae8fea99009736ae976",
+      "original_sha256": "17d54920b0d65d720d434e0a3eae78791e567b59e7f10805f37a57c4762e6f74",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/observation/obs_heathcliff.md",
+      "title": "希斯克利夫言行观察：原文否定句、记忆与口吻",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "35809939081dbcc21886289719d8391c6a88e8751f89e046f8f244d37fc53b61",
+      "original_sha256": "ce818199f3806375f25c6deab48224b55ada452f959831972ac2316550f105f3",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/observation/obs_ishmael.md",
+      "title": "以实玛利言行观察：航海经历、幸存者与口吻",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "ad281888b49e6390da2bb60f140240493773d7b2e850942528ca4aabf71488f1",
+      "original_sha256": "78d4ec3599a139abfda377bcf17a9ba6ac2ca265943478a490d1b7a077b79b0c",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/observation/obs_meursault.md",
+      "title": "默尔索观察记录：条目、收尾与证据边界",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "3ac578d9260cc32de7fbf0e1cc7b2ec49b04a7c8f5f781cb70b150f5c45e9f8f",
+      "original_sha256": "041f432adca12d8ff8748aa8dee54d2031ae91670a3ee24666b3a64502285e34",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/observation/obs_outis.md",
+      "title": "奥提斯观察记录：来源与格式",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "9c01b9cb5232fb2a2ad4a535eec3acac56a45220730d95ce0124057e04d52f78",
+      "original_sha256": "82569a80ffe3a49b6679a3b65c4dba37868bbb823662fd9717263d8f2617545e",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/observation/obs_overview_and_nicknames.md",
+      "title": "罪人观察记录与昵称：来源及使用边界",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "632d64806ca8534a7d4f96045d930da4ce9cdac5bebe85551e26f17dc96f98bc",
+      "original_sha256": "0faeecb7238d0bee9912bc0f27c9b7089c72a119961c4a3d9a1afc1badbd47b1",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/observation/obs_rodion.md",
+      "title": "罗佳言行观察：收税人事件、称呼与解释边界",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "e623a2fad68c331c2d2b9e3543a744de19453470cb1e3c0cee1fac62b781a6f7",
+      "original_sha256": "c4b47c0a3a9411ab4bed8a522514f7670f7e13fa1045afb71e959cf2cd377555",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/observation/obs_ryoshu.md",
+      "title": "良秀语言观察：缩写及演出证据边界",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "b3bda581d6c609303e01cf35c1970da15d24e36dcf71f510290f3c179484b79e",
+      "original_sha256": "f4d7c55a009774a3cd088c8ae85dd5fc806e3fa2d45d0f9043a0bd30d73dd8de",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/observation/obs_sinclair.md",
+      "title": "11号罪人辛克莱：语言观察与剧情核验",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "0123c60541e474b5853109ed8a4ccf94fa81ccc9f76212c40d29786b09c1227e",
+      "original_sha256": "598381b6bd8f6cb783ed28be9645d798f8ab56faab26ae199d255ebd92cf1d0f",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/observation/obs_yi_sang.md",
+      "title": "李箱观察记录：来源与格式",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "e6093ec7e67351103c12128d0f2d904227300c5958eea7ecceefac297948a6f1",
+      "original_sha256": "bcf3675a74e1571b04fc7711111ec881c765cd11b6e9742a7cdc4ca69de4d18f",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/sinners/01_yi_sang.md",
+      "title": "角色语言风格深度调研手册：01 号罪人 · 李箱（Yi Sang）",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "3e38a9fa05a0a7a12450ff0564a00370e0d02f0a155e6d75401ff3bd2b663b3c",
+      "original_sha256": "a70f7c63786b5a12b83336ac88e1c3bb87986e7200cf1db4c6c075407ceeebc5",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/sinners/02_faust.md",
+      "title": "角色语言风格深度调研手册：02 号罪人 · 浮士德（Faust）",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "908817998025b9262432b8e19d3ee2375737a040e35791a1866e3cb69e3a3be0",
+      "original_sha256": "4867300e0a3f50083088f84f398390feba08fa6582dd3c4fd85ad50e102a2dcc",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/sinners/03_don_quixote.md",
+      "title": "角色语言风格深度调研手册：03 号罪人 · 堂吉诃德（Don Quixote）",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "9ee4c31ce78b72f6919562364d0764f5aa939d0e44ff6f92e8d18fc4a8048bec",
+      "original_sha256": "9b06aeb026c1f7cc8d16109632eb0484cd39f28d5d0d8200451b13e2a57fbd92",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/sinners/04_ryoshu.md",
+      "title": "角色语言风格深度调研手册：04 号罪人 · 良秀（Ryōshū）",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "c7295570efe3e21b2c03b583c19255514034957caed1e652fefb0732f19c4b4c",
+      "original_sha256": "97109643c3f198baad3a7c1dafa7757b4d68301792207e70f55e6f1aa7df1f9f",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/sinners/05_meursault.md",
+      "title": "角色语言风格深度调研手册：05 号罪人 · 默尔索（Meursault）",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "50c29e83f70cf4f1023ad4d010f9e9a5fd2c3931efe732533159f9cb9e0c3891",
+      "original_sha256": "9b3f7ed2fa8f6d96d04bb2fe03ab802bc2f44bbbceb16f13dbb8b83d58cc6e49",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/sinners/06_hong_lu.md",
+      "title": "角色语言风格深度调研手册：06 号罪人 · 鸿璐（Hong Lu）",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "12013604b3341fe5bb065211d3f779470f89a44669da93bab0e6d4e7e6e10164",
+      "original_sha256": "ce0109ea23f1a52ef93f62405feabbbacb2f96b4b69967b3e61a573e30dd317d",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/sinners/07_heathcliff.md",
+      "title": "角色语言风格深度调研手册：07 号罪人 · 希斯克利夫（Heathcliff）",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "2afa24be3dbfc3b2a8406b8d317c4cf3f5e3b76db26ccb27169e682854525e91",
+      "original_sha256": "291921951c95d58c0f714e6de2f1fd56bca6b8090f221eb690b1d7c93f425823",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/sinners/08_ishmael.md",
+      "title": "角色语言风格深度调研手册：08 号罪人 · 以实玛利（Ishmael）",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "9513e310a618a7d5b34f7bb71b7aa1415687d56a596bee14a683ade1538481c8",
+      "original_sha256": "d42f9a211344bde5b38c4986a4a393ba1f22395caff949fbf89f1d2357f36842",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/sinners/09_rodion.md",
+      "title": "角色语言风格深度调研手册：09 号罪人 · 罗佳（Rodion）",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "62dd6b9d5bbb0d9d2e9e669df4ed2dea593a0b76155b1312294d07d4601490bb",
+      "original_sha256": "e53aea3dc3b9822f5ca5fdf16202b6bf9e5eaa4bb29ec8452ed53638a4823cd9",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/sinners/10_sinclair.md",
+      "title": "角色语言风格深度调研手册：11 号罪人 · 辛克莱（Sinclair）",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "4b9c5baedebd5fbe811bd94c1754952af0f4ba09882ebeb9a6c30b83422e3241",
+      "original_sha256": "808dde9a5b930690d588bd2c7e440c06988c95c1ce26eb3fddf5554e8c7e1e62",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/sinners/11_outis.md",
+      "title": "角色语言风格深度调研手册：12 号罪人 · 奥提斯（Outis）",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "67eab4b8f37a46820f60fb470400c82bf495b07e66f2b0e3fad4d8f1c2143bde",
+      "original_sha256": "5d64ec3f42fab45ce5ba81986a88cf33b69cca4ba2192126afc98b19fd636058",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/sinners/12_gregor.md",
+      "title": "角色语言风格深度调研手册：13 号罪人 · 格里高尔（Gregor）",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "cba6a5f50fd428d5168391f7700881068d1394b3c8c99e35cdbd3b19b1172f71",
+      "original_sha256": "5f5bd9b809007cfe7e25b347c15a755c5cc98df9e1d46dde67335661abbdda2c",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/sinners/13_dante.md",
+      "title": "角色语言风格深度调研手册：管理者 · 但丁（Dante）",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "c937d2229afb41b14f640a403cbef6b4ddd25ed1ba6dda36fb1404e8494dea7e",
+      "original_sha256": "dddff2017875481914283ff59724889ea0399b318c5b832358f1f4f7d294ae4f",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/sinners/14_vergilius.md",
+      "title": "角色语言风格深度调研手册：14 号核心 · 维吉里乌斯（Vergilius）",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "9184c3d0a8942abc84c868d83e5f9d847a73e52c2d33664011f479742a5ac1d1",
+      "original_sha256": "e75a55cfe3f5503d7de2c8a55d6e2d3c098dfcc3bbc0a9ecede26f6431fdfcf2",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/02_character_personas/sinners/15_charon.md",
+      "title": "角色语言风格深度调研手册：同行角色 · 卡戎（本文排序15）（Charon）",
+      "category": "02_character_personas",
+      "status": "historical_unverified",
+      "sha256": "da2380845aacb9d88b7961ed8780ec039b3c7638c8d36e653a52034688f5fd65",
+      "original_sha256": "d10305b78c3a28de9ab8658474bb85652a534ca3b0fa63ba2514b91db1adcb29",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/03_season8_literary_research/01_camus_archetype.md",
+      "title": "默尔索（Meursault）文学原型与加缪哲学深度考据研报",
+      "category": "03_season8_literary_research",
+      "status": "historical_unverified",
+      "sha256": "36c25685957d1cb367c52648e2b2ff31291e642c6aa14a8011daa9242eb02f17",
+      "original_sha256": "6259ddbcca066d55721cd055eafd4be6e6f3c899825bd204758b6a02f035eb07",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/03_season8_literary_research/02_official_pv_and_settings.md",
+      "title": "05号罪人 · 默尔索（Meursault）官方设定、PV轨迹与E.G.O深度研报",
+      "category": "03_season8_literary_research",
+      "status": "historical_unverified",
+      "sha256": "b36f8e621806cfdf9565c37198d50d87b85b545b058b4283931c57d23f912972",
+      "original_sha256": "7af4d2d17862364844ccbfdaacc5ea3f4d7fbb1d504c132552299fb3ecd62327",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/03_season8_literary_research/03_canto10_lore_and_audit.md",
+      "title": "第8赛季“刺点”与第10章（Canto X）深度剧情考据及汉化校勘研报",
+      "category": "03_season8_literary_research",
+      "status": "historical_unverified",
+      "sha256": "1b2381859f369f20a19c9e91fd8027f51eaf66f63faa19df31a138bcf0741056",
+      "original_sha256": "8f17d4d89d6211e5af1b10143032def5affcbde49d071a2b410a7270ff2f4e41",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/04_corpus_and_terminology/report_community_feedback_and_philosophy_evolution.md",
+      "title": "社区反馈研究：证据状态与可用原则",
+      "category": "04_corpus_and_terminology",
+      "status": "historical_unverified",
+      "sha256": "011e607344db538ced1dc3bc32ce6c74226bdb09af21f8223aebd6b3b62ea4f1",
+      "original_sha256": "8ede54c26dd72a9c7b214ee11df3933031fdb5901edaa7b4adc9fb342c51b5a6",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/04_corpus_and_terminology/report_in_game_corpus_analysis.md",
+      "title": "角色语料核验与统计使用边界",
+      "category": "04_corpus_and_terminology",
+      "status": "historical_unverified",
+      "sha256": "c282719c272c0c176fcdbc4b525ea26ba1edaaab62261eaf4ce9a444e21ac791",
+      "original_sha256": "b6fe340303c5c63e8e361a5492fd6b0edf4daf885e11e189dbd6199f5351f9d7",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/04_corpus_and_terminology/report_name_archive.md",
+      "title": "都市零协会汉化规范调研报告（二）：命名存档体系与术语库研报",
+      "category": "04_corpus_and_terminology",
+      "status": "historical_unverified",
+      "sha256": "744ae6cb64968a16ba8c0ff49a802abe394de7a7b13ff4aa56f7b97ba5978fb6",
+      "original_sha256": "87b1ceb52428ad737cb54c93cefec5faa0f47b24f403f5bb91ed5de649602663",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/05_canto_plot_compendium/canto_01_gregor.md",
+      "title": "章节剧情与设定考据档案：章节I · 无归属者（Canto I: The Outcast）",
+      "category": "05_canto_plot_compendium",
+      "status": "historical_unverified",
+      "sha256": "a64877e1a9768cefa24fc6eaccc762f417eed6db0fc304bc595e9d5f618ba9ea",
+      "original_sha256": "31c68b5c7eb1e1eb0e50f71b04eb3629018ae8f7233520014d5828f140df1b9a",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/05_canto_plot_compendium/canto_02_rodion.md",
+      "title": "章节剧情与设定考据档案：章节II · 无法去爱（Canto II: The Unloving）",
+      "category": "05_canto_plot_compendium",
+      "status": "historical_unverified",
+      "sha256": "cdbe65caf22193a8893b45b59e991471970c860792769d4a53e7b40e0c4ba135",
+      "original_sha256": "69f0abea4fbff01fc7f41c3adf238a31f69adb9e4eba778c1c90fc7b29d5a415",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/05_canto_plot_compendium/canto_03_sinclair.md",
+      "title": "章节剧情与设定考据档案：章节III · 未曾面对（Canto III: The Unconfronting）",
+      "category": "05_canto_plot_compendium",
+      "status": "historical_unverified",
+      "sha256": "b0679ee3d990cfd497fe0be87c69f89d684a7c5f7d5f6375bf107541980b742e",
+      "original_sha256": "f69eb18b0c18afe30e8f4d40cea7f8b8eb78dcb101e4133ef3f5e751e1a15b33",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/05_canto_plot_compendium/canto_04_yi_sang.md",
+      "title": "章节剧情与设定考据档案：章节IV · 无改变者（Canto IV: The Unchanging）",
+      "category": "05_canto_plot_compendium",
+      "status": "historical_unverified",
+      "sha256": "a2fda188c6807f8a45a2fcc67d12f6288070eeeeb9dfbe2153cd912fca288fc6",
+      "original_sha256": "3f54f012714186e7192fd2dd7c39cbe431a5fc0c96d28b9f29db7aca96474307",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/05_canto_plot_compendium/canto_05_ishmael.md",
+      "title": "章节剧情与设定考据档案：章节V · 定义为恶（Canto V: The Evil Defining）",
+      "category": "05_canto_plot_compendium",
+      "status": "historical_unverified",
+      "sha256": "14146585d6c7c1739a6a0c548a6636ee4c14149245af53a528e101a30dbc48ea",
+      "original_sha256": "b2e0513fbc2effa12ca31bd778a07d38be71e02f7385d41ac5021a113b0d6458",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/05_canto_plot_compendium/canto_06_heathcliff.md",
+      "title": "章节剧情与设定考据档案：章节VI · 心意相悖（Canto VI: The Heartbreaking）",
+      "category": "05_canto_plot_compendium",
+      "status": "historical_unverified",
+      "sha256": "aa8671b0658639304d9518dac3dba1c9527495f03a44ce7fad56bb4b874ea717",
+      "original_sha256": "99b2288d4cd1983342ee593ae8bf34f4e77c79b3f239d7cdcff7143794afad99",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/05_canto_plot_compendium/canto_07_don_quixote.md",
+      "title": "章节剧情与设定考据档案：章节VII · 梦之终焉（Canto VII: The Dream's Ending）",
+      "category": "05_canto_plot_compendium",
+      "status": "historical_unverified",
+      "sha256": "4d01f93e1c62314368e003e6b09adf35b70f84c0aee8c0bec0ff3ae0ba584ad4",
+      "original_sha256": "dde2f89a7e85c1f4d1095638fe40f93e53eac4e6aa4401e2c3902f06e46da2ac",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/05_canto_plot_compendium/canto_08_hong_lu.md",
+      "title": "章节剧情与设定考据档案：章节VIII · 不思观望（Canto VIII: The Sightless）",
+      "category": "05_canto_plot_compendium",
+      "status": "historical_unverified",
+      "sha256": "a60dd808d78bc833f354acccd3f51362c5059fa8b9ac5021d50a546d79f8d38c",
+      "original_sha256": "8d07a95c9f3cb053262dfb410716e8845249564b05412e7e533c75d21c48dbe3",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/05_canto_plot_compendium/canto_09_ryoshu.md",
+      "title": "章节剧情与设定考据档案：章节IX · 无割舍者（Canto IX: The Unrelinquishing）",
+      "category": "05_canto_plot_compendium",
+      "status": "historical_unverified",
+      "sha256": "e8bb63b134af423ee39529ab2fb05df725d5f6e507da031ca45452ba7a8d796f",
+      "original_sha256": "47d9a3478ad31b0e06fdd5f6733b98d4db9cbc49b1be93e0086c0b1c5935aa12",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/05_canto_plot_compendium/canto_10_meursault.md",
+      "title": "章节剧情与设定考据档案：章节X · 被凝视者（Canto X: The Gaze Bearing）",
+      "category": "05_canto_plot_compendium",
+      "status": "historical_unverified",
+      "sha256": "9100e976f3db58ed51577c379e5913d87d3d634019a6699c0bb170729ee99319",
+      "original_sha256": "1508b111d4588d717428b132f3d954f17cc74d5acbaeef11259272a8e3c0fd03",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/05_canto_plot_compendium/canto_intervallos.md",
+      "title": "章节剧情与设定考据档案：中篇物语全景考据（Intervallos Compendium）",
+      "category": "05_canto_plot_compendium",
+      "status": "historical_unverified",
+      "sha256": "ad61a3ff84726d1f53cf8c5d5f82f6593f2d625136a2cb785751c524ec41ff0c",
+      "original_sha256": "2c7468c984bfba60833d9df7ec8193b52877ebed32dc370c53649ff2753b36bd",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/06_worldbuilding_and_theories/report_carmen_distortion_ego_mechanisms.md",
+      "title": "都市世界观参考：卡门、扭曲、罪种与 E.G.O",
+      "category": "06_worldbuilding_and_theories",
+      "status": "historical_unverified",
+      "sha256": "8ecbdfeefb3755d36e3bf1ef4c5fa7b7a603228a23e161f582f13b6b2740d4c6",
+      "original_sha256": "024f15819f5b2aab79fdcaff38e97e4932b066732223121866b2866c820f8c26",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/06_worldbuilding_and_theories/report_fingers_and_syndicates.md",
+      "title": "都市世界观深度考据研报：五指黑道教条与后巷地下生态",
+      "category": "06_worldbuilding_and_theories",
+      "status": "historical_unverified",
+      "sha256": "259ddc154261d4298ac40c85a231f0608dbdde88b71af318ec5870c5281bb5b2",
+      "original_sha256": "a52f68dc7941559a3db2aa5bea646ca75ef2ea3f8573cd1ed8e64d42e808f86d",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/06_worldbuilding_and_theories/report_fixers_associations_and_colors.md",
+      "title": "都市世界观深度考据研报：收尾人等级、十二协会与特色收尾人谱系",
+      "category": "06_worldbuilding_and_theories",
+      "status": "historical_unverified",
+      "sha256": "6f3ae0d723e048c5a31c72e55b0d98a692df1a2a2da531ebe9c898f52df75229",
+      "original_sha256": "ace5d3e5b6634bd098a4878dd55e7c00f4b098c914540f1e75f4cc513f03208c",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/06_worldbuilding_and_theories/report_localization_disputes_and_consensus.md",
+      "title": "都市世界观深度考据研报：译名依据与本地约定",
+      "category": "06_worldbuilding_and_theories",
+      "status": "historical_unverified",
+      "sha256": "f5a626e6ab391de0d89a55fdd90033a2146f1476d4942a4f7126090e0d5352ad",
+      "original_sha256": "4f8dde33d3479066cdda9b489561bf16b3ab9c89a59716a8054fedc1d9fb12e1",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/06_worldbuilding_and_theories/report_wings_and_singularities.md",
+      "title": "都市世界观参考：翼、已知技术与奇点的证据边界",
+      "category": "06_worldbuilding_and_theories",
+      "status": "historical_unverified",
+      "sha256": "b82f93a14de52cfe7154dcb6a7b19d5127dba6e02797e6630838922d873ceab4",
+      "original_sha256": "dc8c4fc672fcf026064259c7e2aeca99ddcb6dcdb0d469bbf129d5082811059b",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/07_philosophical_lineage/00_overview_and_genealogical_map.md",
+      "title": "大陆意志哲学·存在主义与荒谬谱系总论与思想演进图谱",
+      "category": "07_philosophical_lineage",
+      "status": "historical_unverified",
+      "sha256": "118d5747d98c559517aec73a98301ce056097cc4637d5e145d6eb5c60ba76e46",
+      "original_sha256": "00282447020ffed88356097f9832983a3effc6553b76929f8792704ed3284e19",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/07_philosophical_lineage/01_the_precursors_kierkegaard_and_dostoevsky.md",
+      "title": "存在之先声：克尔凯郭尔与陀思妥耶夫斯基考据与翻译手册",
+      "category": "07_philosophical_lineage",
+      "status": "historical_unverified",
+      "sha256": "e4087b6b23f3d4afd923efa70e04c2e267f1dbc82e2a1cfbc2267bfd2a0210f7",
+      "original_sha256": "8df33fed69bd4c59d8d96b95c2e4bc08ac9bb2d43aefe2abd197699855dc5a0b",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/07_philosophical_lineage/02_schopenhauer_will_and_pessimism.md",
+      "title": "阿图尔·叔本华：生存意志、悲观论与解脱之道考据手册",
+      "category": "07_philosophical_lineage",
+      "status": "historical_unverified",
+      "sha256": "4cd49392ed8179479235b03f04dff5f1f5333578360135e60670067c55804ab2",
+      "original_sha256": "f282d6f5ce6948b4a650f55d45832f95cb1f6ea83ed7be0628f23ec750486250",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/07_philosophical_lineage/03_nietzsche_will_to_power_and_nihilism.md",
+      "title": "弗里德里希·尼采：权力意志、重估一切与虚无主义考据手册",
+      "category": "07_philosophical_lineage",
+      "status": "historical_unverified",
+      "sha256": "be30c329cb184addea40ffb47f1f666a15cb5e8e7e36a01cf683eb14f8e921cc",
+      "original_sha256": "4dca169fe343fdc1fe9afc01ab1eb83a92b22bbdfc1649b6af85c0a82b3e7e70",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/07_philosophical_lineage/04_phenomenology_and_ontology_husserl_heidegger_jaspers.md",
+      "title": "现象学与本体论基石：胡塞尔·海德格尔·雅斯贝尔斯考据手册",
+      "category": "07_philosophical_lineage",
+      "status": "historical_unverified",
+      "sha256": "6ea14d7077e62b505428da6f2fa88597cabae0f38932164289f2667935a85140",
+      "original_sha256": "fa747874acce722bf0ec235542cf7769e3eb0c49084dac23a908c88bdfd9fb37",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/07_philosophical_lineage/05_sartre_and_beauvoir_existentialism_and_freedom.md",
+      "title": "让-保罗·萨特与西蒙娜·德·波伏娃：存在先于本质、自由与他者考据手册",
+      "category": "07_philosophical_lineage",
+      "status": "historical_unverified",
+      "sha256": "32f0d214d6ea409742bb7fa225524593943ffcbf1f8e21d5a83d709454bfaff5",
+      "original_sha256": "d1ccc3ca6b57bd5bd8d7003fe474802799e9ce2d48fef5cb225edee855dc43c4",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/07_philosophical_lineage/06_camus_the_absurd_and_rebellion.md",
+      "title": "阿尔贝·加缪：荒诞哲学、西西弗斯、反抗者与南方思想考据手册",
+      "category": "07_philosophical_lineage",
+      "status": "historical_unverified",
+      "sha256": "e224ed024a2047cb1f51ecbe566ca8c21e00044aeee5290c23e56cef483d11e9",
+      "original_sha256": "fa1be083fb2ba7076115ce4d4ce24272c8a4bd0f887ed1e35ae2d6acf0922f03",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/07_philosophical_lineage/07_cioran_extreme_nihilism_and_despair.md",
+      "title": "埃米尔·齐奥朗：极致虚无、绝望之巅与怀疑主义考据手册",
+      "category": "07_philosophical_lineage",
+      "status": "historical_unverified",
+      "sha256": "1eb0c2ff1f95e7a691b08ba6b187f0b23baf4b7ba790b62c029828eb4e067128",
+      "original_sha256": "8cd1dbd4238d4f7d42244c5c2dafb51515b0eaa186ae9e58d5d66c2be287ccdd",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy/07_philosophical_lineage/08_multilingual_philosophical_lexicon.md",
+      "title": "欧陆哲学多语术语研究对照表（非强制词典）",
+      "category": "07_philosophical_lineage",
+      "status": "historical_unverified",
+      "sha256": "bf6b3d5c75699c1d2f093ba652dc3fa1939ab14765272c64d6c11429b9bf06b0",
+      "original_sha256": "90e730b32767a8244d9fb33e17c9881299a17e1831c296ef9214adad50138366",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them"
+      ]
+    },
+    {
+      "id": "legacy-audits/knowledge-base-audit.md",
+      "title": "翻译参考库：当前状态与证据",
+      "category": "historical_audits",
+      "status": "historical_unverified",
+      "sha256": "c492f4a4b83718ab7b3fc327184e41b4217d81ce25f3960a5c9b36467238e349",
+      "original_sha256": "5e0a0b1602b5fd7b0535b15462f24072c03a6763b6e3fae5c34e9fcbba1b98e7",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them",
+        "Removed author-machine paths; local evidence links labelled unavailable, not replaced with fabricated evidence"
+      ]
+    },
+    {
+      "id": "legacy-audits/part2-update-scope.md",
+      "title": "Part 2 汉化更新范围确认",
+      "category": "historical_audits",
+      "status": "historical_unverified",
+      "sha256": "3e37ff3456b8a42331e76635ac191e7a0c3044252983ba52fa098eb90a4216b9",
+      "original_sha256": "fa05b7c809e1f8d3ad06d837ae204ea40765eb156fbf9d360f270d1a4d998f48",
+      "modifications": [
+        "Prepended historical-reference warning; retained report claims without certifying them",
+        "Removed author-machine paths; local evidence links labelled unavailable, not replaced with fabricated evidence"
+      ]
+    }
+  ]
+}

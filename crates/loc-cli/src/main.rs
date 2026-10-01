@@ -9,7 +9,7 @@ use loc_cli::commands;
 #[derive(Parser)]
 #[command(name = "lct")]
 #[command(author = "Antigravity & Hackimi Localization Team")]
-#[command(version = "0.2.0")]
+#[command(version = "0.2.1")]
 #[command(about = "Limbus Company Translate (LCT) - 边狱公司工业级本地化工程平台", long_about = None)]
 struct Cli {
     /// 启用机器可读的 JSON 格式输出
@@ -23,6 +23,10 @@ struct Cli {
     /// Read-only Wiki reference database; requires an explicitly bound UI or MCP project.
     #[arg(long, global = true)]
     reference_db: Option<PathBuf>,
+
+    /// Hash-verified historical reports, exposed through read-only MCP research tools.
+    #[arg(long, global = true)]
+    research_dir: Option<PathBuf>,
 
     #[command(subcommand)]
     command: Commands,
@@ -210,6 +214,17 @@ async fn main() -> Result<()> {
         None => store,
     };
 
+    let research = match &cli.research_dir {
+        Some(path) => {
+            anyhow::ensure!(
+                matches!(&cli.command, Commands::Mcp { .. }),
+                "--research-dir requires mcp with explicit --project-id"
+            );
+            Some(loc_core::research::load_research(path)?)
+        }
+        None => None,
+    };
+
     match cli.command {
         Commands::ScopeStatus { project_id } => {
             let scope = store
@@ -237,7 +252,7 @@ async fn main() -> Result<()> {
                 .as_deref()
                 .map(commands::draft_grants::read_permit)
                 .transpose()?;
-            loc_mcp::serve(store, project_id, permit).await?;
+            loc_mcp::serve(store, project_id, permit, research).await?;
         }
         Commands::DraftGrant { input, output } => {
             commands::draft_grants::create_grant(&store, &input, &output)?;

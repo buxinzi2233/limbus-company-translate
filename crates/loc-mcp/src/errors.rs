@@ -11,6 +11,15 @@ pub fn failure(code: FailureCode, message: impl Into<String>) -> Json<ToolFailur
 
 pub fn from_error(error: anyhow::Error) -> Json<ToolFailure> {
     use loc_core::StoreError;
+    if let Some(research) = error.downcast_ref::<loc_core::research::ResearchError>() {
+        use loc_core::research::ResearchError;
+        let code = match research {
+            ResearchError::InvalidQuery => FailureCode::InvalidInput,
+            ResearchError::NotFound(_) => FailureCode::NotFound,
+            ResearchError::NotConfigured => FailureCode::Internal,
+        };
+        return failure(code, format!("{error:#}"));
+    }
     if let Some(access) = error.downcast_ref::<loc_core::DraftAccessError>() {
         let code = match access {
             loc_core::DraftAccessError::Existing(_) => FailureCode::ExistingTranslation,

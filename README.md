@@ -61,18 +61,24 @@ tar -xzf lct-linux-x86_64.tar.gz
 cd lct-linux-x86_64
 sha256sum --check SHA256SUMS
 
-python3 scripts/prepare-references.py .loc/references
-./lct --data-dir .loc/work init review --name "我的本地化项目"
-./lct --data-dir .loc/work \
-  --reference-db "$PWD/.loc/references/references.sqlite3" \
-  ui --project-id review --port 3000 --no-open
+python3 scripts/setup-workspace.py \
+  --binary "$PWD/lct" --workspace "$HOME/lct-review" \
+  --project-id review --name "我的本地化项目" --port 3000
+"$HOME/lct-review/start-ui.sh"
 ```
 
-在浏览器打开 **http://127.0.0.1:3000**。进入“语料检索”，搜索“呼吸法”即可核验 Wiki 参考是否可用；终端按 `Ctrl+C` 停止服务。
+在浏览器打开 **http://127.0.0.1:3000**；终端按 `Ctrl+C` 停止界面服务。初始化全程离线、逐文件校验，拒绝覆盖已有工作区；不修改任何全局 AI 客户端设置，也不会自动签发写入许可。
 
-- 首次启动的项目库存为零是正常状态：参考语料不会自动变成待译任务或完成量。
-- 语料恢复完全离线，逐文件校验；目标目录已存在则拒绝覆盖，损坏文件会明确报错。
-- `.loc/work` 是可写工作库，`.loc/references/references.sqlite3` 是只读参考库，两者分开管理。
+### 把 AI 接进来
+
+1. 将新工作区 `mcp.json` 中的 **command 与 args** 配到支持 stdio MCP 的 AI 客户端；文件使用常见 `mcpServers` JSON 外壳，客户端若使用其他格式，应保留这些参数并按其格式填写。
+2. 重连客户端，将工作区的 `AGENTS.md` 交给 AI；项目 Skill 与接口文档已在发布包中。仅接入 MCP 的客户端也能通过工具读取研究全文，不要求模型访问本机文件。
+3. 验证发现 **13 个工具**，先调用 `project_status`（`project_id: "review"`），再调用 `reference_status`、`search_references`（如“呼吸法”）、`search_corpus`（如“经理”）、`list_research`（总数 65）、`search_research`、`read_research`。
+4. 现在即可只读查阅公开中文语料、Wiki 和角色/文风研究。开始自己的翻译时，仍须自行提供合法取得的完整韩文源快照，由人确认导入、任务范围、执行器隔离与草稿许可；AI 不能替人审批或写入游戏文件，具体步骤见[接口说明](docs/AI_AGENT_INTEGRATION.md)。
+
+生成文件：`data/`（新工作库）、`references/`（只读语料与中文 JSON）、`mcp.json`（接入配置）、`start-ui.sh`（界面启动器）、`workspace.json`（明确的项目与路径）、`AGENTS.md`（AI 交接说明）。配置使用绝对路径，**不要移动或删除解压后的工具目录**；不包含模型服务账号或 API 密钥，需要用户在自己的 AI 客户端配置。
+
+首次库存为零是正常状态，参考资料不等于待译任务或完成量。只想恢复语料、不创建项目时，仍可单独运行 `python3 scripts/prepare-references.py /absolute/new-reference-directory`。
 
 ### 从源码构建
 
@@ -86,7 +92,7 @@ pnpm --dir ui build
 cargo build --release --locked -p loc-cli
 ```
 
-前端必须先构建：发布程序将 `ui/dist` 嵌入可执行文件。随后按上方初始化步骤操作，将 `./lct` 替换为 `./target/release/lct`；源码仓库也包含完整的 `corpus/` 数据。
+前端必须先构建：发布程序将 `ui/dist` 嵌入可执行文件。随后按上方初始化步骤操作，将 `--binary "$PWD/lct"` 替换为 `--binary "$PWD/target/release/lct"`；源码仓库也包含完整的 `corpus/` 数据。
 
 ## 随包语料：包含什么，不包含什么
 
@@ -101,18 +107,31 @@ cargo build --release --locked -p loc-cli
 
 源数据与元数据中的本机路径已替换为可移植路径。具体版本和来源见 [corpus/manifest.json](corpus/manifest.json)。
 
-**中文参考库不等于已对齐的韩中翻译记忆（TM）。** 当前 WebUI/MCP 的社区参考接口检索 Wiki；零协会原始 JSON 恢复到 `.loc/references/zh-CN`，其字段索引保留在参考库的 `corpus` / `terms` 表中，不由该接口检索。
+**中文参考库不等于已对齐的韩中翻译记忆（TM）。** 当前 WebUI/MCP 的社区参考接口检索 Wiki；零协会原始 JSON 恢复到新工作区的 `references/zh-CN`，其 173,300 条文本字段由独立 MCP 工具 `search_corpus` 直接检索并返回来源文件、JSON Pointer 与哈希；这仍不是韩中自动对齐，WebUI 的 Wiki 搜索不等同于此中文字段搜索。
 
 需要双语 TM 时，另行提供合法取得、版本匹配的韩文 JSON，然后显式索引：
 
 ```bash
-./lct --data-dir .loc/work index \
+./lct --data-dir "$HOME/lct-review/data" index \
   --kr /absolute/path/to/matching/KR \
-  --zh "$PWD/.loc/references/zh-CN" \
+  --zh "$HOME/lct-review/references/zh-CN" \
   --origin zero-association-2026092702 --priority 100
 ```
 
 不分发私人工作库、个人草稿、审校状态、草稿授权、韩文游戏资源或游戏二进制。快照更新必须显式进行，不在启动时悄悄联网替换。
+
+## 完整分发清单
+
+| 内容 | 仓库 / Linux 发布包 |
+| --- | --- |
+| CLI、WebUI、MCP | 仓库含源码；发布包内嵌前端，无需安装构建工具 |
+| 中文参考快照及 Wiki | `corpus/`，含原始 ZIP、索引、来源、许可、校验与离线恢复 |
+| 调查、文风、角色、文学与剧情研究 | [`research/`](research/README.md)，65 份历史报告，分类索引、原始/导出哈希、可信度警示 |
+| AI 接入 | 工作区生成器、13 个 MCP 工具、项目 Skill、完整接口文档 |
+| 历史语料维护及资源调查工具 | [`tools/`](tools/README.md)，15 个 Python/依赖文件，保留来源哈希与历史适用边界 |
+| 发布验证及 UI 图片 | `scripts/`、`docs/`，发布包完整校验清单 `SHA256SUMS` |
+
+**有意不分发**：私人工作库、草稿/审校证据、生产任务与权限文件、账号密钥、个人暂停/交接状态、游戏二进制和韩文原始资源。它们不是其他用户运行工具的前提，不能用复制原用户的生产状态来实现“开箱即用”。历史资料和维护工具的完整分发，也不意味着其结论已经核实或所有历史外部输入均可再分发。
 
 ## 使用流程与 MCP
 
@@ -131,8 +150,9 @@ cargo build --release --locked -p loc-cli
 智能体使用同一个工作库与显式项目，通过 stdio 连接：
 
 ```bash
-./lct --data-dir .loc/work \
-  --reference-db "$PWD/.loc/references/references.sqlite3" \
+./lct --data-dir "$HOME/lct-review/data" \
+  --reference-db "$HOME/lct-review/references/references.sqlite3" \
+  --research-dir "$PWD/research" \
   mcp --project-id review
 ```
 
