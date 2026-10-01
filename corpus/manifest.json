@@ -1,0 +1,25 @@
+{
+  "snapshot": "2026092702",
+  "scope": "Chinese reference only; not aligned Korean-Chinese TM or human approval",
+  "upstream_release": "https://github.com/LocalizeLimbusCompany/LocalizeLimbusCompany/releases/tag/2026092702",
+  "upstream_archive_sha256": "3425161255b43d5b2725c8328380a7a10945bba6658f2b5f0cd8e703b4f0f031",
+  "counts": {
+    "pages": 35,
+    "term_candidates": 285,
+    "passages": 191,
+    "sources": 2237,
+    "corpus": 173300,
+    "terms": 28997
+  },
+  "modifications": [
+    "Public reference database copied using SQLite backup; no project state included",
+    "Machine-local source paths replaced with paths inside the unchanged upstream ZIP",
+    "Database vacuumed and gzip-compressed; reference text and attribution retained",
+    "Local license and input-manifest metadata paths replaced with bundled relative paths and per-file SHA-256 manifest"
+  ],
+  "licenses": {
+    "software": "MIT; excludes corpus content",
+    "zero_association": "CC BY-NC-SA 4.0; see licenses/ZeroAssociation-LICENSE.txt",
+    "wiki": "Site default CC BY-SA 4.0 with page-specific notices and third-party rights; see licenses/wiki-source-license.json"
+  }
+}

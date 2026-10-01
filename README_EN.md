@@ -1,96 +1,177 @@
+<div align="center">
+
 # LCT · Limbus Company Translate
 
-简体中文 | **[English]**
+**A traceable path from source text to reviewed translation.**
 
-An industrial-grade KR → ZH-CN localization engineering platform for Limbus Company: a Rust workspace centered on a translation-memory core, with a CLI pipeline, a local WebUI dashboard, and an MCP interface for AI agents.
+A local KR → ZH-CN localization workstation for Limbus Company<br>
+Rust CLI · Bilingual review UI · MCP interface · Offline reference corpus
 
-> The boundary of language is not the boundary of understanding.
+[简体中文](README.md) · **English** · [Download](https://github.com/buxinzi2233/limbus-company-translate/releases) · [API guide](docs/AI_AGENT_INTEGRATION.md)
 
-## What it is
+</div>
 
-LCT treats game-text localization as a gated engineering pipeline, not a one-off script:
+![LCT overview with task scope, translation coverage, resource categories and review queue](docs/images/overview.jpg)
 
-- **Index** bilingual reference corpora into a SQLite FTS5 full-text translation memory (TM)
-- **Extract** incremental diffs between raw source and current translations into work orders
-- **Inject** translations back in place via RFC 6901 JSON Pointers — lossless, untouched fields stay untouched
-- **Gate** every translation unit with L-level QA rules (tildes, placeholders, spacing, terminology consistency…); AI drafts must pass the gate to enter the database and are never marked as "human-reviewed"
-- **Review** happens in a local WebUI: bilingual workbench, corpus search, provenance & audit, focused review queue
+> The overview and workbench screenshots use an isolated `readme-demo` fixture, not production translations or real localization progress. The search screenshot uses the public Wiki snapshot included in the bundle. The application UI is currently in Chinese.
 
-The toolchain is AI-first (the CLI performs authorized indexing/extraction/file operations; MCP offers project reads, QA, and draft submission), while the WebUI is where humans observe, verify, and approve.
+## More than a translation editor
 
-## Three interfaces
+LCT connects source imports, reference lookup, drafts, human review and JSON write-back in a traceable local workflow. The CLI handles engineering operations, the WebUI supports human review, and MCP exposes bounded project tools to agents.
 
-### 1. CLI
+| Capability | What it does |
+| --- | --- |
+| **Bilingual workbench** | Compare Korean and Chinese side by side; filter by task, resource category and stage while retaining context and field paths |
+| **Reference search** | Search project segments, translation memory and Wiki references with provenance, revision IDs, attribution and licenses |
+| **Incremental import** | Detect new, changed and deleted source text while preserving translations and identifying work that needs review |
+| **QA and human review** | Check placeholders, numbers, rich text and formatting; passing QA never automatically approves an AI draft |
+| **Write-back and recovery** | Update JSON fields by pointer, retain unrelated fields, and record backups, recovery operations and audit events |
+
+### Interface gallery
+
+<details>
+<summary><strong>Bilingual workbench · source, context and translation in one place</strong></summary>
+
+![A filtered example in the bilingual workbench with Korean source, Chinese translation and review controls](docs/images/workbench.jpg)
+
+The example remains “imported translation awaiting review.” Imported text, a populated translation, QA success and human confirmation are distinct states.
+
+</details>
+
+<details>
+<summary><strong>Corpus search · community references kept separate from translation memory</strong></summary>
+
+![Wiki reference search for 呼吸法 with revision, attribution and license details](docs/images/references.jpg)
+
+The screenshot quotes the Chinese Limbus Company Wiki page “呼吸法” at revision 104445. Authors are listed in its page history; quoted content retains CC BY-SA 4.0 subject to page-specific notices. Provenance and transformation notices are retained in the reference database and [Wiki license record](corpus/licenses/wiki-source-license.json).
+
+</details>
+
+## Quick start
+
+### Prebuilt: executable + frontend + corpus
+
+Download `lct-linux-x86_64.tar.gz` and its `.sha256` file from [Releases](https://github.com/buxinzi2233/limbus-company-translate/releases), placing them in the same directory.
+
+**The prebuilt executable requires Linux x86_64, glibc 2.39+ and `libgcc_s.so.1`.** Corpus preparation also requires Python 3.11+ with SQLite FTS5. Rust, Node.js and pnpm are not needed to run this package. Other platforms have no prebuilt package; building locally may work with older Linux libraries, but cross-distribution compatibility has not been certified.
 
 ```bash
-lct init                       # initialize a workspace
-lct index                      # index bilingual corpora, feed the TM
-lct extract                    # extract incremental untranslated segments (JSONL work orders)
-lct inject                     # safely inject back into game JSON
-lct qa                         # localization gates & semantic-consistency audit
-lct fix                        # deterministic safe auto-fixes
-lct search <term>              # millisecond full-text search over real in-game lines
-lct scope-import / scope-status   # validate / read task scope
-lct draft-grant / draft-revoke    # issue / revoke AI draft authorization
-lct restore                    # explicit backup restore, no unrelated overwrites
-lct ui                         # launch the local WebUI dashboard
-lct mcp                        # serve bounded project tools over MCP stdio
+sha256sum --check lct-linux-x86_64.tar.gz.sha256
+tar -xzf lct-linux-x86_64.tar.gz
+cd lct-linux-x86_64
+sha256sum --check SHA256SUMS
+
+python3 scripts/prepare-references.py .loc/references
+./lct --data-dir .loc/work init review --name "My localization project"
+./lct --data-dir .loc/work \
+  --reference-db "$PWD/.loc/references/references.sqlite3" \
+  ui --project-id review --port 3000 --no-open
 ```
 
-### 2. WebUI (local dashboard)
+Open **http://127.0.0.1:3000**. Select corpus search (“语料检索”) and search for “呼吸法” to verify the Wiki library. Press `Ctrl+C` in the terminal to stop the service.
+
+- An empty project inventory on first launch is expected: reference data is not automatically turned into translation tasks or completed work.
+- Preparation is fully offline, verifies each file, rejects corrupt data and refuses to overwrite an existing destination.
+- `.loc/work` is the writable project store; `.loc/references/references.sqlite3` is the separate read-only reference library.
+
+### Build from source
+
+Install Rust/Cargo, Node.js and pnpm. The workspace declares Rust 1.89; this release was built with Rust 1.98.1, Node.js 26.10.0 and pnpm 11.26.0. The minimum toolchain combination has not been validated.
 
 ```bash
-lct ui --project-id review --port 3000
-```
-
-Listens on loopback only. Five surfaces: overview (observation instrument), bilingual workbench, corpus search, provenance & audit, focused review. The UI is embedded into the single binary via rust-embed — no static assets to ship.
-
-### 3. MCP (AI agents)
-
-```bash
-lct mcp --project-id review
-```
-
-For an explicit local single-user project: AI can read the project, run QA, and submit drafts — drafts require a human-issued `draft-grant` beforehand, and still land in the review queue where a human makes the final call.
-
-## Build
-
-Frontend first; release builds embed `ui/dist` into the binary:
-
-```bash
+git clone https://github.com/buxinzi2233/limbus-company-translate.git
+cd limbus-company-translate
 pnpm --dir ui install --frozen-lockfile
 pnpm --dir ui build
 cargo build --release --locked -p loc-cli
-./target/release/lct ui --no-open
 ```
 
-Requires Rust 1.89+, Node.js + pnpm. Target: local single-user Linux x86_64 workspaces.
+Build the frontend first: the release executable embeds `ui/dist`. Follow the initialization steps above, replacing `./lct` with `./target/release/lct`. The source checkout also includes the complete `corpus/` data.
 
-## Repository layout
+## The bundled corpus
 
+This is a fixed **2026092702 Chinese reference snapshot**, not a continuously updated online service.
+
+| Content | Coverage |
+| --- | --- |
+| Original Zero Association release ZIP | 2,237 JSON source files and the original license |
+| Chinese field indexes | 173,300 text fields and 28,997 name fields—not unique-term counts or translation progress |
+| Wiki reference database | 35 captured pages, 33 searchable; 285 name-candidate records representing 191 distinct names; 191 passages |
+| Distribution support | Provenance manifest, SHA-256 checksums, offline preparation script, third-party licenses and modification notices |
+
+Machine-local source and metadata paths have been replaced with portable paths. See [corpus/manifest.json](corpus/manifest.json) for versions and provenance.
+
+**A Chinese reference library is not aligned KR–ZH translation memory.** The current WebUI/MCP community-reference endpoints search Wiki content. Original Zero Association JSON is restored to `.loc/references/zh-CN`; its field indexes remain in the reference database’s `corpus` / `terms` tables and are not searched by those endpoints.
+
+To build bilingual TM, supply legally obtained, version-matched Korean JSON and explicitly index it:
+
+```bash
+./lct --data-dir .loc/work index \
+  --kr /absolute/path/to/matching/KR \
+  --zh "$PWD/.loc/references/zh-CN" \
+  --origin zero-association-2026092702 --priority 100
 ```
-crates/
-  loc-core     core models, SQLite storage, audit, terminology
-  loc-parser   AST extractor / RFC 6901 injector / asset categories
-  loc-tm       translation-memory engine
-  loc-qa       QA gates and auto-fixes
-  loc-server   local HTTP API with embedded assets
-  loc-cli      the lct command line
-  loc-mcp      MCP stdio server
-ui/            React + Vite dashboard (Rhine Lab art direction)
-docs/          interface guide, production checklist, UI art direction
-scripts/       release and verification scripts
+
+No private project database, personal drafts, review state, draft permits, Korean game resources or game binaries are distributed. Snapshot upgrades are explicit, never silent startup downloads.
+
+## Workflow and MCP
+
+```text
+Prepare matching source and reference versions
+                    ↓
+Index TM → Extract source → Confirm task scope
+                                    ↓
+                         Draft → QA → Human review
+                                    ↓
+                           Write-back → Audit / Restore
 ```
 
-## Design red lines
+Commands include `init`, `index`, `extract`, `search`, `qa`, `fix`, `scope-import`, `scope-status`, `draft-grant`, `draft-revoke`, `inject`, `restore`, `ui` and `mcp`. Check arguments with `./lct <command> --help`.
 
-- **Local, single user**: no remote auth, no multi-user project selection, no remote MCP — do not expose the service through a proxy
-- **Human final review**: AI drafts always enter the review queue; passing QA gates is not human sign-off
-- **Lossless write-back**: injection never touches unrelated fields; restore only reverts what the backup covers
-- **Reduced motion**: every UI animation honors both the OS `prefers-reduced-motion` setting and the in-app toggle
+Agents connect over stdio using the same project store and an explicit project ID:
 
-See [docs/AI_AGENT_INTEGRATION.md](docs/AI_AGENT_INTEGRATION.md) for interfaces and security boundaries, and [docs/UI_ART_DIRECTION.md](docs/UI_ART_DIRECTION.md) for the art direction.
+```bash
+./lct --data-dir .loc/work \
+  --reference-db "$PWD/.loc/references/references.sqlite3" \
+  mcp --project-id review
+```
 
-## License
+Use absolute paths when registering this command with an MCP client. Without `--draft-permit`, the connection is read-only. Draft writes require a prior human-issued permit pinned to the task and source snapshot. The project Skill is in `.agents/skills/lct-localization/`; see the [agent integration guide](docs/AI_AGENT_INTEGRATION.md) for tools, grants and read-back rules.
 
-[MIT](LICENSE) · Antigravity & Hackimi Localization Team
+## Safety and scope
+
+- **Local, single user:** HTTP listens on loopback only and has no remote authentication. Do not expose it through a public proxy.
+- **Human final review:** reference candidates, imported translations, AI drafts and passing QA do not constitute human confirmation.
+- **Bounded guarantees:** QA is not proof of semantic accuracy or correct in-game rendering. MCP write restrictions are not host-level permission isolation.
+- **Validate before production use:** use a separate working directory first, and verify destination paths before injection or recovery.
+- **Unofficial:** this tool is not affiliated with Project Moon or Zero Association and does not claim authorship of third-party reference material.
+
+## Development and packaging
+
+```text
+crates/       core · parser · tm · qa · server · cli · mcp
+ui/           React + Vite local review interface
+corpus/       public reference snapshot, checksums and separate licenses
+scripts/      offline preparation, integration acceptance and packaging
+docs/         API guide, design notes, validation boundaries and UI screenshots
+```
+
+Run from the source checkout:
+
+```bash
+cargo test --locked --workspace
+pnpm --dir ui format:check
+pnpm --dir ui test:editor
+python3 scripts/verify-corpus.py "$PWD"
+bash scripts/package-release.sh /absolute/output-directory
+```
+
+Packaging installs locked dependencies and builds both frontend and backend in a temporary source directory, then verifies out-of-tree startup and real HTTP/MCP reference search. Archives include screenshots, corpus, licenses and checksums. Run `python3 scripts/accept-release.py /absolute/path/to/unpacked/lct` for additional release acceptance. Remaining sign-off and safety boundaries are tracked in the [validation checklist](docs/PRODUCTION_TODO.md).
+
+## Licenses and acknowledgements
+
+- **Tool code:** [MIT](LICENSE) · Antigravity & Hackimi Localization Team.
+- **Zero Association corpus:** retains **CC BY-NC-SA 4.0** under its [original license](corpus/licenses/ZeroAssociation-LICENSE.txt).
+- **Wiki content:** retains site-default **CC BY-SA 4.0**, subject to page-specific notices, contributor attribution, page history and third-party rights; see the [license record](corpus/licenses/wiki-source-license.json). Third-party quotations in screenshots retain their original licenses.
+
+The software’s MIT license does not cover this third-party content. Read the respective licenses before using or redistributing the corpus.

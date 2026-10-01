@@ -1,0 +1,12 @@
+{
+  "source_url": "https://limbuscompany.huijiwiki.com/wiki/%E9%A6%96%E9%A1%B5",
+  "observed_at": "2026-09-26T16:49:45.264975+00:00",
+  "method": "Visible homepage DOM; license hyperlink and its parent text",
+  "notice": "除非另有说明，否则本站内容依据CC BY-SA 4.0许可证进行授权，转载请附上出处链接。",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "scope": "Site default, not an assertion that all embedded third-party material shares this license",
+  "attribution": "边狱公司中文维基贡献者；individual page history URLs retained in pages.history_url",
+  "changes": "Rendered HTML converted to text; linked labels indexed; passages split with overlap; dynamic indexes excluded from search",
+  "third_party_notice": "但丁笔记 index explicitly credits 都市零协会汉化组; notice retained and not reassigned to Wiki authors",
+  "reuse_notice": "Wiki-derived licensed material remains CC BY-SA 4.0 where applicable, with attribution and change notice; separate notices and third-party rights remain effective. No change to the software license."
+}
