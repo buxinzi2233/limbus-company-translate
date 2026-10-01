@@ -6,11 +6,26 @@ use loc_core::Store;
 use std::net::SocketAddr;
 use tracing::info;
 
-pub use routes::create_router;
+pub use routes::{create_router, create_scoped_router};
 
 /// 启动 Axum HTTP 服务，同时提供 REST API 与内嵌 WebUI
-pub async fn start_server(port: u16, open_browser: bool, store: Store) -> Result<()> {
-    let app = create_router(store);
+pub async fn start_server(
+    port: u16,
+    open_browser: bool,
+    store: Store,
+    project_id: Option<String>,
+) -> Result<()> {
+    let selected = match project_id {
+        Some(id) => {
+            anyhow::ensure!(
+                store.get_project(&id)?.is_some(),
+                "Project {id} does not exist"
+            );
+            Some(id)
+        }
+        None => store.get_latest_project()?.map(|project| project.id),
+    };
+    let app = create_scoped_router(store, selected);
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     let url = format!("http://{}", addr);
     info!("🚀 LCT WebUI 态势大盘服务已启动: {}", url);
@@ -26,7 +41,9 @@ pub async fn start_server(port: u16, open_browser: bool, store: Store) -> Result
             #[cfg(target_os = "macos")]
             let _ = std::process::Command::new("open").arg(&url).spawn();
             #[cfg(target_os = "windows")]
-            let _ = std::process::Command::new("cmd").args(["/c", "start", &url]).spawn();
+            let _ = std::process::Command::new("cmd")
+                .args(["/c", "start", &url])
+                .spawn();
         });
     }
     println!("   按 Ctrl+C 可停止服务");

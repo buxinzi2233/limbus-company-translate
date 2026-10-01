@@ -41,23 +41,23 @@ fn test_store_lifecycle_and_fts5_search() -> Result<()> {
 
     // 4. FTS5 全文搜索检验 (短词 + 长句双重检索)
     // 4.1 搜短词 "契约" (2字符)
-    let zh_short = store.search_segments_fts("契约", 10)?;
+    let zh_short = store.search_segments_fts("s8-test", "契约", 10)?;
     assert_eq!(zh_short.len(), 1);
     assert_eq!(zh_short[0].relative_path, "StoryData/S1029B.json");
     assert_eq!(zh_short[0].speaker.as_deref(), Some("단테"));
 
     // 4.2 搜长句 "身体能力衰退" (6字符，触发 FTS5 trigram 索引)
-    let zh_long = store.search_segments_fts("身体能力衰退", 10)?;
+    let zh_long = store.search_segments_fts("s8-test", "身体能力衰退", 10)?;
     assert_eq!(zh_long.len(), 1);
     assert_eq!(zh_long[0].key_path, "/dataList/1/content");
 
     // 4.3 搜韩文短词 "균열" (2字符)
-    let kr_short = store.search_segments_fts("균열", 10)?;
+    let kr_short = store.search_segments_fts("s8-test", "균열", 10)?;
     assert_eq!(kr_short.len(), 1);
     assert_eq!(kr_short[0].target_zh.as_deref(), Some("裂隙终于彻底撕裂……"));
 
     // 4.4 搜韩文长句 "완전히 찢어지고" (8字符，触发 FTS5 trigram 索引)
-    let kr_long = store.search_segments_fts("완전히 찢어지고", 10)?;
+    let kr_long = store.search_segments_fts("s8-test", "완전히 찢어지고", 10)?;
     assert_eq!(kr_long.len(), 1);
     assert_eq!(kr_long[0].key_path, "/dataList/0/content");
 
@@ -70,7 +70,11 @@ fn test_store_lifecycle_and_fts5_search() -> Result<()> {
         100,
     );
     store.upsert_tm_entry(&tm_entry)?;
-    let queried = store.query_tm_exact("hash_123")?.expect("应当命中TM");
+    let queried = store
+        .query_tm_candidates("hash_123")?
+        .into_iter()
+        .next()
+        .expect("应当命中TM");
     assert_eq!(queried.priority, 100);
     assert_eq!(queried.source_origin, "upstream_llc_gold");
 

@@ -38,19 +38,16 @@ async fn test_api_endpoints_full_lifecycle() -> Result<()> {
     );
     store.batch_upsert_segments(&[segment])?;
 
+    let current = store.get_segment("test-lct", 1)?;
     let app = create_router(store);
 
     // 1. 测试 GET /api/status
-    let req = Request::builder()
-        .uri("/api/status")
-        .body(Body::empty())?;
+    let req = Request::builder().uri("/api/status").body(Body::empty())?;
     let resp = app.clone().oneshot(req).await?;
     assert_eq!(resp.status(), StatusCode::OK);
 
     // 2. 测试 GET /api/files
-    let req = Request::builder()
-        .uri("/api/files")
-        .body(Body::empty())?;
+    let req = Request::builder().uri("/api/files").body(Body::empty())?;
     let resp = app.clone().oneshot(req).await?;
     assert_eq!(resp.status(), StatusCode::OK);
 
@@ -64,6 +61,8 @@ async fn test_api_endpoints_full_lifecycle() -> Result<()> {
     // 4. 测试 POST /api/segments/update
     let update_body = json!({
         "id": 1,
+        "project_id": "test-lct",
+        "expected_updated_at": current.updated_at,
         "target_zh": "我们终于抵达了。",
         "stage": 4
     });
@@ -77,7 +76,7 @@ async fn test_api_endpoints_full_lifecycle() -> Result<()> {
 
     // 5. 测试 POST /api/qa/check
     let bad_qa_body = json!({
-        "text": "测试全角波浪号～"
+        "text": "测试全角波浪号～", "kr": "테스트"
     });
     let req = Request::builder()
         .method("POST")
@@ -89,7 +88,7 @@ async fn test_api_endpoints_full_lifecycle() -> Result<()> {
 
     // 6. 测试 POST /api/qa/fix
     let fix_body = json!({
-        "text": "测试全角波浪号～"
+        "text": "测试全角波浪号～", "kr": "테스트"
     });
     let req = Request::builder()
         .method("POST")

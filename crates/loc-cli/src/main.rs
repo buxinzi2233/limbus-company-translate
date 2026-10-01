@@ -1,10 +1,10 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use loc_core::{Project, Store};
 use serde_json::json;
 use std::path::PathBuf;
 
-mod commands;
+use loc_cli::commands;
 
 #[derive(Parser)]
 #[command(name = "lct")]
@@ -20,12 +20,52 @@ struct Cli {
     #[arg(long, global = true, default_value = ".loc")]
     data_dir: PathBuf,
 
+    /// Read-only Wiki reference database; requires an explicitly bound UI or MCP project.
+    #[arg(long, global = true)]
+    reference_db: Option<PathBuf>,
+
     #[command(subcommand)]
     command: Commands,
 }
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Read the validated task scope for an explicit project.
+    ScopeStatus {
+        #[arg(long)]
+        project_id: String,
+    },
+    /// Validate and persist a task scope without changing source or translations.
+    ScopeImport {
+        #[arg(long)]
+        project_id: String,
+        #[arg(long)]
+        name: String,
+        #[arg(long)]
+        input: PathBuf,
+    },
+    /// Serve bounded project tools over MCP stdio; no human approval or file output tools.
+    Mcp {
+        #[arg(long)]
+        project_id: String,
+        /// Process-bound first-draft capability; omission makes this connection read-only.
+        #[arg(long)]
+        draft_permit: Option<PathBuf>,
+    },
+    /// Issue an exclusive source-pinned first-draft grant after explicit human authorization.
+    DraftGrant {
+        #[arg(long)]
+        input: PathBuf,
+        #[arg(long)]
+        output: PathBuf,
+    },
+    /// Revoke a grant immediately for all processes holding its permit.
+    DraftRevoke {
+        #[arg(long)]
+        project_id: String,
+        #[arg(long)]
+        grant_id: String,
+    },
     /// 初始化新的本地化工作区
     Init {
         /// 项目代号标识 (如 limbus-s8)
@@ -36,6 +76,20 @@ enum Commands {
     },
     /// 查看当前汉化进度与大盘状态
     Status,
+    /// Submit a QA-gated AI draft; never marks it as manually reviewed.
+    Draft {
+        #[arg(long)]
+        input: PathBuf,
+        #[arg(long)]
+        draft_permit: PathBuf,
+    },
+    /// Restore an injection backup without overwriting unrelated edits.
+    Restore {
+        #[arg(long)]
+        workspace: PathBuf,
+        #[arg(long)]
+        backup: PathBuf,
+    },
     /// 毫秒级反向实机台词/词条全文搜索
     Search {
         /// 搜索关键词 (支持中韩双语片段、角色名)
@@ -46,6 +100,8 @@ enum Commands {
     },
     /// 启动本地 WebUI 态势大盘与 REST API 服务 (默认自动在默认浏览器中拉起大盘)
     Ui {
+        #[arg(long)]
+        project_id: Option<String>,
         /// 本地服务端口 (默认 3000)
         #[arg(short, long, default_value_t = 3000)]
         port: u16,
@@ -101,6 +157,8 @@ enum Commands {
     },
     /// 将翻译成果从工单文件或项目数据库安全注入回填至游戏 JSON 工作区
     Inject {
+        #[arg(long, conflicts_with = "ticket")]
+        project_id: Option<String>,
         /// 目标中文工作区目录 (如 workspace/LLC_zh-CN)
         #[arg(long)]
         workspace: PathBuf,
@@ -122,19 +180,122 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
+    tracing_subscriber::fmt()
+        .with_writer(std::io::stderr)
+        .with_max_level(tracing::Level::WARN)
+        .try_init()
+        .map_err(|error| anyhow::anyhow!("Initialize CLI diagnostics: {error}"))?;
+    if matches!(cli.command, Commands::Mcp { .. }) {
+        anyhow::ensure!(
+            cli.data_dir.join("project.db").is_file(),
+            "MCP requires an existing database: {}",
+            cli.data_dir.join("project.db").display()
+        );
+    }
     std::fs::create_dir_all(&cli.data_dir)?;
     let db_path = cli.data_dir.join("project.db");
     let store = Store::open(&db_path)?;
+    let store = match &cli.reference_db {
+        Some(path) => {
+            let project_id = match &cli.command {
+                Commands::Mcp { project_id, .. }
+                | Commands::Ui {
+                    project_id: Some(project_id),
+                    ..
+                } => project_id,
+                _ => anyhow::bail!("--reference-db requires mcp or ui with explicit --project-id"),
+            };
+            store.with_reference(project_id, path)?
+        }
+        None => store,
+    };
 
     match cli.command {
+        Commands::ScopeStatus { project_id } => {
+            let scope = store
+                .task_scope(&project_id)?
+                .ok_or(loc_core::ScopeError::Missing(project_id))?;
+            println!("{}", serde_json::to_string_pretty(&scope)?);
+        }
+        Commands::ScopeImport {
+            project_id,
+            name,
+            input,
+        } => {
+            commands::scope::import_scope(&store, &project_id, &name, &input)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&store.task_scope(&project_id)?)?
+            );
+        }
+
+        Commands::Mcp {
+            project_id,
+            draft_permit,
+        } => {
+            let permit = draft_permit
+                .as_deref()
+                .map(commands::draft_grants::read_permit)
+                .transpose()?;
+            loc_mcp::serve(store, project_id, permit).await?;
+        }
+        Commands::DraftGrant { input, output } => {
+            commands::draft_grants::create_grant(&store, &input, &output)?;
+        }
+        Commands::DraftRevoke {
+            project_id,
+            grant_id,
+        } => {
+            store.revoke_draft_grant(&project_id, &grant_id)?;
+            println!("{}", json!({"revoked":grant_id,"project_id":project_id}));
+        }
         Commands::Init { id, name } => {
             let project = Project::new(&id, &name);
             store.upsert_project(&project)?;
             if cli.json {
-                println!("{}", json!({ "status": "ok", "project_id": id, "name": name }));
+                println!(
+                    "{}",
+                    json!({ "status": "ok", "project_id": id, "name": name })
+                );
             } else {
                 println!("✓ 本地化工程已成功初始化: [{}] {}", id, name);
                 println!("  数据底座保存在: {}", db_path.display());
+            }
+        }
+        Commands::Restore { workspace, backup } => {
+            let summary = commands::run_restore(&workspace, &backup)?;
+            store.record_restoration(&workspace.canonicalize()?, &backup, summary.restored_files + summary.removed_files)
+                .context("Files were restored, but the database audit receipt failed; inspect the workspace before retrying")?;
+            if cli.json {
+                println!("{}", serde_json::to_string(&summary)?);
+            } else {
+                println!(
+                    "恢复完成：还原 {} 个文件，删除本批新增的 {} 个文件",
+                    summary.restored_files, summary.removed_files
+                );
+            }
+        }
+        Commands::Draft {
+            input,
+            draft_permit,
+        } => {
+            use std::io::Read;
+            let mut bytes = Vec::new();
+            std::fs::File::open(&input)?
+                .take(1_048_577)
+                .read_to_end(&mut bytes)?;
+            anyhow::ensure!(
+                bytes.len() <= 1_048_576,
+                "Draft input exceeds 1 MiB: {}",
+                input.display()
+            );
+            let submission: loc_qa::DraftSubmission = serde_json::from_slice(&bytes)?;
+            let permit = commands::draft_grants::read_permit(&draft_permit)?;
+            let item = loc_qa::submit_ai_draft(&store, &submission, Some(&permit))?;
+            if cli.json {
+                println!("{}", json!({"status":"ok","item":item}));
+            } else {
+                println!("AI 草稿已保存，QA 通过但尚未人工审校：{}", item.id);
             }
         }
         Commands::Status => {
@@ -160,7 +321,10 @@ async fn main() -> Result<()> {
             }
         }
         Commands::Search { query, limit } => {
-            let seg_results = store.search_segments_fts(&query, limit)?;
+            let project = store
+                .get_latest_project()?
+                .ok_or_else(|| anyhow::anyhow!("No active project; run lct init first"))?;
+            let seg_results = store.search_segments_fts(&project.id, &query, limit)?;
             let tm_results = store.search_tm_fts(&query, limit)?;
             if cli.json {
                 println!(
@@ -210,8 +374,12 @@ async fn main() -> Result<()> {
                 }
             }
         }
-        Commands::Ui { port, no_open } => {
-            loc_server::start_server(port, !no_open, store).await?;
+        Commands::Ui {
+            port,
+            no_open,
+            project_id,
+        } => {
+            loc_server::start_server(port, !no_open, store, project_id).await?;
         }
         Commands::Qa { text, kr } => {
             let issues = loc_qa::check_segment_pair(&kr, &text);
@@ -270,6 +438,7 @@ async fn main() -> Result<()> {
                         "status": "ok",
                         "scanned_files": summary.scanned_files,
                         "aligned_entries": summary.aligned_entries,
+                        "inserted_entries": summary.inserted_entries,
                         "total_tm_entries": total_in_db,
                         "elapsed_ms": summary.elapsed_ms,
                     })
@@ -277,7 +446,8 @@ async fn main() -> Result<()> {
             } else {
                 println!("✓ 双语语料全量对齐与 TM 反哺完成！");
                 println!("  扫描有效双语文件: {} 个", summary.scanned_files);
-                println!("  本轮吸纳记忆词条: {} 条", summary.aligned_entries);
+                println!("  本轮对齐记忆词条: {} 条", summary.aligned_entries);
+                println!("  本轮新增记忆词条: {} 条", summary.inserted_entries);
                 println!("  数据库当前 TM 总量: {} 条", total_in_db);
                 println!(
                     "  耗时: {:.2}s ({} ms)",
@@ -310,6 +480,8 @@ async fn main() -> Result<()> {
                 println!("  已汉化保留:   {} 条", summary.already_translated);
                 println!("  TM 自动预填:  {} 条", summary.tm_exact_filled);
                 println!("  待翻译生肉:   {} 条", summary.pending_untranslated);
+                println!("  待人工复核:   {} 条", summary.needs_review);
+                println!("  快照绑定记录: {} 条", summary.snapshot_bound_segments);
                 if let Some(tp) = ticket {
                     println!("  工单文件已导出至: {}", tp.display());
                 }
@@ -321,19 +493,21 @@ async fn main() -> Result<()> {
             }
         }
         Commands::Inject {
+            project_id,
             workspace,
             kr,
             ticket,
             qa_check,
             force,
         } => {
-            let summary = commands::run_inject(
+            let summary = commands::inject::run_scoped_inject(
                 &store,
                 &workspace,
                 kr.as_deref(),
                 ticket.as_deref(),
                 qa_check,
                 force,
+                project_id.as_deref(),
             )?;
             if cli.json {
                 println!("{}", serde_json::to_string(&summary)?);

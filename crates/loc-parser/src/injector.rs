@@ -4,7 +4,10 @@ use serde_json::Value;
 use crate::pointer::set_at_pointer;
 
 /// 基于 RFC-6901 指针列表将翻译回填至原始 JSON AST
-pub fn inject_translations_into_value(root: &mut Value, translations: &[(&str, &str)]) -> Result<usize> {
+pub fn inject_translations_into_value(
+    root: &mut Value,
+    translations: &[(&str, &str)],
+) -> Result<usize> {
     let mut modified_count = 0;
     for (pointer, target_zh) in translations {
         set_at_pointer(root, pointer, Value::String(target_zh.to_string()))?;

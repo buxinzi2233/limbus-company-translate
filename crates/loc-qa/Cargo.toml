@@ -14,3 +14,5 @@ unicode-segmentation = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 tracing = { workspace = true }
+chrono = { workspace = true }
+schemars = { workspace = true }

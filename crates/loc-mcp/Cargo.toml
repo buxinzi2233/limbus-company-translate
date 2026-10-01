@@ -1,0 +1,19 @@
+[package]
+name = "loc-mcp"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+loc-core.workspace = true
+loc-qa.workspace = true
+rmcp.workspace = true
+schemars.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+tokio.workspace = true
+anyhow.workspace = true
+futures-util = { version = "0.3", features = ["sink"] }
+tokio-util = { version = "0.7", features = ["codec"] }

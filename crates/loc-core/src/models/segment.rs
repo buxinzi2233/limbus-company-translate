@@ -15,6 +15,8 @@ pub enum Stage {
     AiDrafted = 3,
     /// 4: 人类指挥官审核通过，已锁定
     Reviewed = 4,
+    /// 5: Imported reference translation, awaiting explicit review.
+    Imported = 5,
     /// 9: 属于上游零协会已汉化的权威基准，物理只读锁定，严禁污染
     UpstreamFrozen = 9,
 }
@@ -27,6 +29,7 @@ impl From<i32> for Stage {
             2 => Stage::OutdatedDiff,
             3 => Stage::AiDrafted,
             4 => Stage::Reviewed,
+            5 => Stage::Imported,
             9 => Stage::UpstreamFrozen,
             _ => Stage::Untranslated,
         }

@@ -1,12 +1,12 @@
-use anyhow::Result;
+use anyhow::{ensure, Context, Result};
 use loc_core::{Store, TMEntry};
 use loc_parser::extract_segments_from_value;
+use loc_parser::{inventory_korean_assets, parse_game_json};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::time::Instant;
-use walkdir::WalkDir;
 
 use crate::matcher::hash_text;
 
@@ -14,6 +14,7 @@ use crate::matcher::hash_text;
 pub struct IndexSummary {
     pub scanned_files: usize,
     pub aligned_entries: usize,
+    pub inserted_entries: usize,
     pub elapsed_ms: u128,
 }
 
@@ -27,7 +28,8 @@ pub fn index_parallel_corpora(
 ) -> Result<IndexSummary> {
     let start = Instant::now();
     let mut scanned_files = 0;
-    let mut aligned_entries = 0;
+    let mut entries = Vec::new();
+    let assets = inventory_korean_assets(kr_root)?;
 
     let zh_root_effective = if zh_root.join("LimbusCompany_Data/Lang/LLC_zh-CN").exists() {
         zh_root.join("LimbusCompany_Data/Lang/LLC_zh-CN")
@@ -35,50 +37,40 @@ pub fn index_parallel_corpora(
         zh_root.to_path_buf()
     };
 
-    for entry in WalkDir::new(kr_root).into_iter().filter_map(|e| e.ok()) {
-        let path = entry.path();
-        if path.extension().and_then(|s| s.to_str()) != Some("json") {
-            continue;
-        }
-
-        let rel_path = path.strip_prefix(kr_root)?;
-        // 处理可能存在的 KR_ 前缀 (如 KR_StoryData/ -> StoryData/)
-        let normalized_rel_str = rel_path.to_string_lossy().replace("KR_", "");
+    for (normalized_rel_str, path) in assets {
         let zh_file = zh_root_effective.join(&normalized_rel_str);
 
-        if !zh_file.exists() {
+        if !zh_file.try_exists()? {
             continue;
         }
 
-        let kr_content = match fs::read_to_string(path) {
-            Ok(c) => c,
-            Err(_) => continue,
-        };
-        let zh_content = match fs::read_to_string(&zh_file) {
-            Ok(c) => c,
-            Err(_) => continue,
-        };
+        let kr_content =
+            fs::read_to_string(&path).with_context(|| format!("Read corpus {}", path.display()))?;
+        let zh_content = fs::read_to_string(&zh_file)
+            .with_context(|| format!("Read corpus {}", zh_file.display()))?;
+        let kr_val: Value = parse_game_json(kr_content.as_bytes())
+            .with_context(|| format!("Parse corpus {}", path.display()))?;
+        let zh_val: Value = parse_game_json(zh_content.as_bytes())
+            .with_context(|| format!("Parse corpus {}", zh_file.display()))?;
 
-        let kr_val: Value = match serde_json::from_str(&kr_content) {
-            Ok(v) => v,
-            Err(_) => continue,
-        };
-        let zh_val: Value = match serde_json::from_str(&zh_content) {
-            Ok(v) => v,
-            Err(_) => continue,
-        };
+        let kr_items = extract_segments_from_value(&kr_val)
+            .with_context(|| format!("Align Korean corpus {}", path.display()))?;
+        let zh_items = extract_segments_from_value(&zh_val)
+            .with_context(|| format!("Align Chinese corpus {}", zh_file.display()))?;
 
-        let kr_items = extract_segments_from_value(&kr_val, true)?;
-        let zh_items = extract_segments_from_value(&zh_val, false)?;
+        ensure!(
+            !kr_items.iter().chain(zh_items.iter()).any(|item| item.snapshot_bound),
+            "Cannot index snapshot-bound arrays as bilingual TM: {normalized_rel_str}; record alignment requires independent review"
+        );
 
         let zh_map: HashMap<&str, &str> = zh_items
             .iter()
-            .map(|item| (item.pointer.as_str(), item.source_kr.as_str()))
+            .map(|item| (item.identity.as_str(), item.source_kr.as_str()))
             .collect();
 
         let mut batch = Vec::with_capacity(kr_items.len());
         for kr_item in &kr_items {
-            if let Some(&zh_trans) = zh_map.get(kr_item.pointer.as_str()) {
+            if let Some(&zh_trans) = zh_map.get(kr_item.identity.as_str()) {
                 // 如果中文译文与韩文原文相同 (说明未翻译)，则跳过
                 if zh_trans.trim() == kr_item.source_kr.trim() {
                     continue;
@@ -101,17 +93,17 @@ pub fn index_parallel_corpora(
             }
         }
 
-        if !batch.is_empty() {
-            let count = store.upsert_tm_entries_batch(&batch)?;
-            aligned_entries += count;
-        }
+        entries.extend(batch);
 
         scanned_files += 1;
     }
 
+    let aligned_entries = entries.len();
+    let inserted_entries = store.upsert_tm_entries_batch(&entries)?;
     Ok(IndexSummary {
         scanned_files,
         aligned_entries,
+        inserted_entries,
         elapsed_ms: start.elapsed().as_millis(),
     })
 }

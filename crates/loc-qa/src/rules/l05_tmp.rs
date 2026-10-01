@@ -2,7 +2,9 @@ use crate::issue::{Issue, IssueSeverity};
 use regex::Regex;
 use std::sync::LazyLock;
 
-static TAG_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"</?([a-zA-Z0-9]+)(=[^>]*)?>").unwrap());
+pub(super) static TAG_RE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"(?i)</?(align|allcaps|alpha|b|br|color|cspace|font|font-weight|gradient|i|indent|line-height|line-indent|link|lowercase|margin|margin-left|margin-right|mark|mspace|nobr|noparse|page|pos|rotate|s|size|smallcaps|space|sprite|strikethrough|style|sub|sup|u|uppercase|voffset|width)(?:[= ][^<>]*)?/?>").unwrap()
+});
 
 pub fn check_l05_tmp_tags(text: &str) -> Option<Issue> {
     let mut stack: Vec<String> = Vec::new();
@@ -11,8 +13,16 @@ pub fn check_l05_tmp_tags(text: &str) -> Option<Issue> {
         let full_tag = cap.get(0).unwrap().as_str();
         let tag_name = cap.get(1).unwrap().as_str().to_lowercase();
 
-        // 忽略自闭合/单标签
-        if tag_name == "sprite" || tag_name == "br" {
+        if stack.last().is_some_and(|name| name == "noparse")
+            && !(tag_name == "noparse" && full_tag.starts_with("</"))
+        {
+            continue;
+        }
+        // These tags change state or insert a glyph without an opening/closing pair.
+        if matches!(
+            tag_name.as_str(),
+            "sprite" | "br" | "page" | "space" | "pos" | "alpha" | "margin-left" | "margin-right"
+        ) {
             continue;
         }
 
@@ -24,7 +34,7 @@ pub fn check_l05_tmp_tags(text: &str) -> Option<Issue> {
                         rule_id: "L05".to_string(),
                         severity: IssueSeverity::Fatal,
                         message: format!(
-                            "TextMeshPro 标签交叉闭合错误: 期望 </{}> 但遇到了 </{}> (会导致 Unity 渲染崩溃)",
+                            "TextMeshPro 标签交叉闭合错误: 期望 </{}> 但遇到了 </{}> (会导致富文本显示异常)",
                             top, tag_name
                         ),
                         pointer: None,
@@ -59,6 +69,34 @@ pub fn check_l05_tmp_tags(text: &str) -> Option<Issue> {
         })
     } else {
         None
+    }
+}
+
+/// Preserve renderer control tags and their attributes across translation.
+pub fn check_tmp_invariant(source: &str, target: &str) -> Option<Issue> {
+    let tags = |text: &str| {
+        let mut result: Vec<String> = TAG_RE
+            .find_iter(text)
+            .map(|item| item.as_str().to_string())
+            .collect();
+        result.sort();
+        result
+    };
+    let source_tags = tags(source);
+    let target_tags = tags(target);
+    if source_tags == target_tags {
+        None
+    } else {
+        Some(Issue {
+            rule_id: "TMP_MISMATCH".into(),
+            severity: IssueSeverity::Error,
+            message: format!(
+                "富文本控制标签或属性不匹配: 原文={source_tags:?}, 译文={target_tags:?}"
+            ),
+            pointer: None,
+            auto_fixable: false,
+            suggested_fix: None,
+        })
     }
 }
 

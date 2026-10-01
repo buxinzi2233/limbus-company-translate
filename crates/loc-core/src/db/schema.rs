@@ -3,6 +3,18 @@ use rusqlite::Connection;
 
 /// 执行数据库表结构迁移与 FTS5 全文索引构建
 pub fn migrate(conn: &Connection) -> Result<()> {
+    conn.execute_batch("CREATE TABLE IF NOT EXISTS translation_scopes (
+        project_id TEXT PRIMARY KEY REFERENCES projects(id), name TEXT NOT NULL,
+        manifest_sha256 TEXT NOT NULL, source_import_id INTEGER NOT NULL, created_at TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS translation_scope_files (
+        project_id TEXT NOT NULL REFERENCES translation_scopes(project_id), file_id INTEGER NOT NULL REFERENCES files(id),
+        sha256 TEXT NOT NULL, PRIMARY KEY(project_id,file_id));
+        CREATE TABLE IF NOT EXISTS translation_scope_segments (
+        project_id TEXT NOT NULL REFERENCES translation_scopes(project_id), segment_id INTEGER NOT NULL REFERENCES segments(id),
+        source_identity TEXT NOT NULL, source_kr TEXT NOT NULL, key_path TEXT NOT NULL, PRIMARY KEY(project_id,segment_id));
+        CREATE TABLE IF NOT EXISTS translation_scope_events (
+        id INTEGER PRIMARY KEY, project_id TEXT NOT NULL, previous_sha256 TEXT, manifest_sha256 TEXT NOT NULL,
+        source_import_id INTEGER NOT NULL, selected_segments INTEGER NOT NULL, created_at TEXT NOT NULL);")?;
     conn.execute_batch(
         r#"
         PRAGMA journal_mode = WAL;
@@ -129,5 +141,56 @@ pub fn migrate(conn: &Connection) -> Result<()> {
         END;
         "#,
     )?;
+    conn.execute_batch("CREATE TABLE IF NOT EXISTS translation_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, project_id TEXT NOT NULL,
+        segment_id INTEGER NOT NULL, kind TEXT NOT NULL, producer TEXT NOT NULL,
+        source_kr TEXT NOT NULL, previous_target TEXT, target_zh TEXT NOT NULL,
+        previous_stage INTEGER NOT NULL, resulting_stage INTEGER NOT NULL,
+        previous_version TEXT NOT NULL, created_at TEXT NOT NULL);
+        CREATE INDEX IF NOT EXISTS idx_translation_events_project ON translation_events(project_id,id);
+        CREATE TABLE IF NOT EXISTS source_imports (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, project_id TEXT NOT NULL,
+        source_directory TEXT NOT NULL, translation_directory TEXT NOT NULL,
+        active_segments INTEGER NOT NULL, added_or_reactivated INTEGER NOT NULL,
+        changed INTEGER NOT NULL, retired INTEGER NOT NULL, created_at TEXT NOT NULL);
+        CREATE INDEX IF NOT EXISTS idx_source_imports_project ON source_imports(project_id,id);")?;
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS file_operations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, project_id TEXT, kind TEXT NOT NULL,
+        workspace TEXT NOT NULL, backup_directory TEXT NOT NULL, affected_files INTEGER NOT NULL,
+        created_at TEXT NOT NULL);
+        CREATE INDEX IF NOT EXISTS idx_file_operations_project ON file_operations(project_id,id);",
+    )?;
+    // Additive migration preserves existing databases and historical translations.
+    for (table, column, definition) in [
+        ("files", "active", "INTEGER NOT NULL DEFAULT 1"),
+        ("segments", "active", "INTEGER NOT NULL DEFAULT 1"),
+        ("segments", "source_identity", "TEXT"),
+        ("segments", "retired_key_path", "TEXT"),
+        ("segments", "review_confirmed", "INTEGER NOT NULL DEFAULT 0"),
+    ] {
+        let exists: bool = conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM pragma_table_info(?1) WHERE name = ?2)",
+            [table, column],
+            |row| row.get(0),
+        )?;
+        if !exists {
+            conn.execute_batch(&format!(
+                "ALTER TABLE {table} ADD COLUMN {column} {definition}"
+            ))?;
+            if column == "review_confirmed" {
+                conn.execute_batch(
+                    "UPDATE segments SET review_confirmed = 1 WHERE stage = 4 AND EXISTS (
+                    SELECT 1 FROM translation_events e WHERE e.project_id = segments.project_id
+                    AND e.segment_id = segments.id AND e.kind = 'review'
+                    AND e.source_kr = segments.source_kr AND e.target_zh = segments.target_zh);",
+                )?;
+            }
+        }
+    }
+    conn.execute_batch("CREATE UNIQUE INDEX IF NOT EXISTS idx_segment_identity ON segments(file_id, source_identity) WHERE source_identity IS NOT NULL;")?;
+    super::draft_grants::migrate(conn)?;
+    super::search_index::migrate_search_index(conn)?;
+    super::categories::migrate_categories(conn)?;
     Ok(())
 }

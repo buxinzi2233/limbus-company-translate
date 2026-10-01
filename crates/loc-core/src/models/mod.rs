@@ -4,7 +4,7 @@ pub mod segment;
 pub mod term;
 pub mod tm;
 
-pub use file::FileRecord;
+pub use file::{resource_category, FileRecord, ResourceCategory};
 pub use project::Project;
 pub use segment::{Segment, Stage};
 pub use term::Term;

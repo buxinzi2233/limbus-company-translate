@@ -3,7 +3,8 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
-static PLACEHOLDER_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\{([A-Za-z0-9_:]+)\}").unwrap());
+pub(super) static PLACEHOLDER_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\{\{|\}\}|\{([^{}]+)\}|[{}]").unwrap());
 
 pub fn extract_placeholders(text: &str) -> HashMap<String, usize> {
     let mut map = HashMap::new();
@@ -19,15 +20,14 @@ pub fn check_l03_placeholder(source_kr: &str, target_zh: &str) -> Option<Issue> 
     let kr_map = extract_placeholders(source_kr);
     let zh_map = extract_placeholders(target_zh);
 
-    if kr_map != zh_map {
+    let malformed_target = PLACEHOLDER_RE
+        .find_iter(target_zh)
+        .any(|item| matches!(item.as_str(), "{" | "}"));
+    if kr_map != zh_map || malformed_target {
         Some(Issue {
             rule_id: "L03".to_string(),
             severity: IssueSeverity::Fatal,
-            message: format!(
-                "动态占位符不匹配: 原文={:?}, 译文={:?}",
-                kr_map.keys().collect::<Vec<_>>(),
-                zh_map.keys().collect::<Vec<_>>()
-            ),
+            message: format!("动态占位符不匹配: 原文={:?}, 译文={:?}", kr_map, zh_map),
             pointer: None,
             auto_fixable: false,
             suggested_fix: None,

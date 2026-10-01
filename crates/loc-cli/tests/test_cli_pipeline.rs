@@ -1,6 +1,6 @@
 use anyhow::Result;
-use loc_core::Store;
 use loc_cli::commands::{run_extract, run_inject};
+use loc_core::Store;
 use serde_json::json;
 use std::fs;
 use tempfile::tempdir;
@@ -51,8 +51,8 @@ fn test_cli_extract_and_inject_pipeline() -> Result<()> {
     )?;
 
     assert_eq!(extract_summary.scanned_files, 1);
-    assert_eq!(extract_summary.total_segments, 2);
-    assert_eq!(extract_summary.pending_untranslated, 2);
+    assert_eq!(extract_summary.total_segments, 4);
+    assert_eq!(extract_summary.pending_untranslated, 4);
     assert!(ticket_path.exists());
 
     // 2. 模拟外部 AI/人工处理工单: 填入中文翻译
@@ -61,7 +61,11 @@ fn test_cli_extract_and_inject_pipeline() -> Result<()> {
     for line in ticket_content.lines() {
         let mut item: serde_json::Value = serde_json::from_str(line)?;
         let kr = item["source_kr"].as_str().unwrap();
-        let trans = if kr.contains("도착") {
+        let trans = if kr == "단테" {
+            "但丁"
+        } else if kr == "파우스트" {
+            "浮士德"
+        } else if kr.contains("도착") {
             "我们终于抵达了。"
         } else {
             "这里正是终点。"
@@ -83,7 +87,7 @@ fn test_cli_extract_and_inject_pipeline() -> Result<()> {
     )?;
 
     assert_eq!(inject_summary.modified_files, 1);
-    assert_eq!(inject_summary.injected_segments, 2);
+    assert_eq!(inject_summary.injected_segments, 4);
     assert_eq!(inject_summary.qa_violations, 0);
 
     // 4. 验证回填后的中文 JSON 文件完整性与正确性
@@ -96,10 +100,7 @@ fn test_cli_extract_and_inject_pipeline() -> Result<()> {
         injected_val["dataList"][0]["content"].as_str(),
         Some("我们终于抵达了。")
     );
-    assert_eq!(
-        injected_val["dataList"][0]["teller"].as_str(),
-        Some("단테")
-    );
+    assert_eq!(injected_val["dataList"][0]["teller"].as_str(), Some("但丁"));
     assert_eq!(
         injected_val["dataList"][1]["content"].as_str(),
         Some("这里正是终点。")

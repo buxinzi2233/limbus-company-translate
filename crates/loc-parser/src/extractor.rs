@@ -1,8 +1,7 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::hangul::contains_hangul;
 use crate::pointer::encode_token;
 
 /// 从游戏 JSON 中提取出的待本地化单元
@@ -10,6 +9,8 @@ use crate::pointer::encode_token;
 pub struct ExtractedItem {
     /// RFC-6901 JSON 树中的绝对寻址路径 (如 /dataList/0/texts/1/text)
     pub pointer: String,
+    pub identity: String,
+    pub snapshot_bound: bool,
     /// 原始韩文文本
     pub source_kr: String,
     /// 说话人/角色名 (如有)
@@ -18,10 +19,10 @@ pub struct ExtractedItem {
     pub field_name: String,
 }
 
-/// 判定字段是否属于确定性的代码元数据 (绝对排除)
-fn is_metadata_blacklist_key(key: &str) -> bool {
+// Metadata is excluded by schema, never by the language of its value.
+fn is_metadata_key(key: &str) -> bool {
     matches!(
-        key.to_lowercase().as_str(),
+        key.trim().to_ascii_lowercase().as_str(),
         "id" | "key"
             | "model"
             | "voice"
@@ -41,27 +42,124 @@ fn is_metadata_blacklist_key(key: &str) -> bool {
             | "personalityid"
             | "skin"
             | "costume"
-            | "speaker"
-            | "teller"
+            | "imgstr"
+            | "usage"
+            | "codename"
+            | "colorcode"
+            | "outlinecolorcode"
+            | "maintextcolor"
+            | "maintextglowcolor"
+            | "debugnodeid"
+            | "iconid"
+            | "keywords"
+            | "undefined"
     )
 }
 
-/// 泛化 AST 递归遍历提取器
-/// - `only_hangul = true`: 仅提取包含韩文的生肉条目 (用于从客户端提取新增待译文本)
-/// - `only_hangul = false`: 提取所有自然语言文本 (用于从零协会中文库提取语料充实 TM 记忆库)
-pub fn extract_segments_from_value(root: &Value, only_hangul: bool) -> Result<Vec<ExtractedItem>> {
+// Display fields verified against the current client resources.
+// Unknown nonempty strings fail the import rather than silently disappear.
+fn is_display_field(key: &str) -> bool {
+    matches!(
+        key,
+        "abName"
+            | "abnormalityName"
+            | "add"
+            | "area"
+            | "askLevelUp"
+            | "behaveDesc"
+            | "chapter"
+            | "chapterNumber"
+            | "chaptertitle"
+            | "clue"
+            | "company"
+            | "content"
+            | "desc"
+            | "description"
+            | "dialog"
+            | "displayName"
+            | "dlg"
+            | "eventDesc"
+            | "failureDesc"
+            | "flavor"
+            | "goalDescription1"
+            | "goalDescription2"
+            | "goalDescription3"
+            | "goalDescription4"
+            | "goalDescription5"
+            | "goalDescription6"
+            | "goalDescription7"
+            | "goalDescription8"
+            | "longName"
+            | "lowMoraleDescription"
+            | "mainText"
+            | "message"
+            | "messageDesc"
+            | "min"
+            | "name"
+            | "nameWithTitle"
+            | "nickName"
+            | "openCondition"
+            | "openConditionNumber"
+            | "panicDescription"
+            | "panicName"
+            | "parttitle"
+            | "place"
+            | "prevDesc"
+            | "rawDesc"
+            | "relatedChapterText"
+            | "result"
+            | "sentence"
+            | "shortName"
+            | "simpleDesc"
+            | "skinItemDesc"
+            | "skinItemTitle"
+            | "songWriter"
+            | "speaker"
+            | "specialName"
+            | "statText"
+            | "story"
+            | "subDesc"
+            | "subText"
+            | "successDesc"
+            | "summary"
+            | "teacher"
+            | "teller"
+            | "text"
+            | "timeline"
+            | "title"
+            | "variation"
+            | "variation2"
+    )
+}
+
+/// Extract nonempty display fields independently of their source language.
+pub fn extract_segments_from_value(root: &Value) -> Result<Vec<ExtractedItem>> {
     let mut items = Vec::new();
-    traverse_node(root, "", None, only_hangul, &mut items);
-    Ok(items)
+    traverse_node(root, "", "", None, &mut items)?;
+    let identities = crate::source_identities(
+        root,
+        &items
+            .iter()
+            .map(|item| item.pointer.as_str())
+            .collect::<Vec<_>>(),
+    )?;
+    Ok(items
+        .into_iter()
+        .map(|item| ExtractedItem {
+            identity: identities[&item.pointer].encoded.clone(),
+            snapshot_bound: identities[&item.pointer].snapshot_bound,
+            ..item
+        })
+        .collect())
 }
 
 fn traverse_node(
     current: &Value,
     current_pointer: &str,
+    field_name: &str,
     inherited_speaker: Option<&str>,
-    only_hangul: bool,
     results: &mut Vec<ExtractedItem>,
-) {
+) -> Result<()> {
     match current {
         Value::Object(map) => {
             // 尝试在当前层嗅探说话人 (teller 优先，其次 speaker，其次 model)
@@ -81,62 +179,35 @@ fn traverse_node(
             }
 
             for (key, val) in map {
-                let token = encode_token(key);
-                let next_pointer = format!("{}/{}", current_pointer, token);
-
-                if is_metadata_blacklist_key(key) {
+                if is_metadata_key(key) {
                     continue;
                 }
-
-                if let Some(text) = val.as_str() {
-                    let should_extract = if only_hangul {
-                        contains_hangul(text) && !text.trim().is_empty()
-                    } else {
-                        !text.trim().is_empty()
-                    };
-
-                    if should_extract {
-                        results.push(ExtractedItem {
-                            pointer: next_pointer.clone(),
-                            source_kr: text.to_string(),
-                            speaker: local_speaker.map(ToString::to_string),
-                            field_name: key.clone(),
-                        });
-                    }
-                } else {
-                    traverse_node(val, &next_pointer, local_speaker, only_hangul, results);
-                }
+                let next_pointer = format!("{}/{}", current_pointer, encode_token(key));
+                traverse_node(val, &next_pointer, key, local_speaker, results)?;
             }
         }
         Value::Array(list) => {
             for (idx, val) in list.iter().enumerate() {
                 let next_pointer = format!("{}/{}", current_pointer, idx);
-                match val {
-                    Value::String(text) => {
-                        let should_extract = if only_hangul {
-                            contains_hangul(text) && !text.trim().is_empty()
-                        } else {
-                            !text.trim().is_empty()
-                        };
-
-                        if should_extract {
-                            let field_name = current_pointer.rsplit('/').next().unwrap_or("").to_string();
-                            results.push(ExtractedItem {
-                                pointer: next_pointer.clone(),
-                                source_kr: text.to_string(),
-                                speaker: inherited_speaker.map(ToString::to_string),
-                                field_name,
-                            });
-                        }
-                    }
-                    _ => {
-                        traverse_node(val, &next_pointer, inherited_speaker, only_hangul, results);
-                    }
-                }
+                traverse_node(val, &next_pointer, field_name, inherited_speaker, results)?;
             }
+        }
+        Value::String(text) if !text.trim().is_empty() => {
+            if !is_display_field(field_name) {
+                bail!("Unclassified localization string at {} (field {:?}); classify this field before importing", current_pointer, field_name);
+            }
+            results.push(ExtractedItem {
+                identity: String::new(),
+                snapshot_bound: false,
+                pointer: current_pointer.to_owned(),
+                source_kr: text.clone(),
+                speaker: inherited_speaker.map(ToString::to_string),
+                field_name: field_name.to_owned(),
+            });
         }
         _ => {}
     }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -161,7 +232,7 @@ mod tests {
             ]
         });
 
-        let items = extract_segments_from_value(&story_json, true)?;
+        let items = extract_segments_from_value(&story_json)?;
         assert_eq!(items.len(), 3); // place + content + content
 
         assert_eq!(items[0].pointer, "/dataList/0/place");
@@ -200,8 +271,12 @@ mod tests {
             ]
         });
 
-        let items = extract_segments_from_value(&rpg_json, true)?;
-        assert_eq!(items.len(), 2);
+        let items = extract_segments_from_value(&rpg_json)?;
+        assert_eq!(items.len(), 4);
+        let items: Vec<_> = items
+            .into_iter()
+            .filter(|item| item.field_name == "text")
+            .collect();
 
         assert_eq!(items[0].pointer, "/dataList/0/texts/0/text");
         assert_eq!(items[0].source_kr, "잠시 발걸음을 멈추어도 되겠소.");
@@ -218,7 +293,6 @@ mod tests {
     fn test_extract_unknown_schema_drift() -> Result<()> {
         // 模拟未来官方全新变异结构：官方新搞了一个嵌套三层的 event_node，且字段名是 dialogue
         let new_feature_json = json!({
-            "metadata": { "version": "9.9", "id": "special_99" },
             "events": [
                 {
                     "node": {
@@ -232,14 +306,11 @@ mod tests {
             ]
         });
 
-        let items = extract_segments_from_value(&new_feature_json, true)?;
-        assert_eq!(items.len(), 3);
-        assert_eq!(items[0].pointer, "/events/0/node/dialogue");
-        assert_eq!(items[0].source_kr, "새로운 미지의 이벤트 대사입니다.");
-        assert_eq!(items[1].pointer, "/events/0/node/choice_options/0");
-        assert_eq!(items[1].source_kr, "첫번째 선택지");
-        assert_eq!(items[2].pointer, "/events/0/node/choice_options/1");
-        assert_eq!(items[2].source_kr, "두번째 선택지");
+        let error = extract_segments_from_value(&new_feature_json).unwrap_err();
+        assert!(error
+            .to_string()
+            .contains("Unclassified localization string"));
+        assert!(error.to_string().contains("/events/0/node/dialogue"));
 
         Ok(())
     }

@@ -17,12 +17,12 @@ pub fn parse_pointer(pointer: &str) -> Result<Vec<String>> {
         return Ok(Vec::new());
     }
     if !pointer.starts_with('/') {
-        return Err(anyhow!("Invalid JSON Pointer: must start with '/': {}", pointer));
+        return Err(anyhow!(
+            "Invalid JSON Pointer: must start with '/': {}",
+            pointer
+        ));
     }
-    let tokens = pointer[1..]
-        .split('/')
-        .map(decode_token)
-        .collect();
+    let tokens = pointer[1..].split('/').map(decode_token).collect();
     Ok(tokens)
 }
 
@@ -33,13 +33,24 @@ pub fn get_at_pointer<'a>(root: &'a Value, pointer: &str) -> Result<&'a Value> {
     for token in tokens {
         match current {
             Value::Object(map) => {
-                current = map.get(&token).ok_or_else(|| anyhow!("Key not found: {}", token))?;
+                current = map
+                    .get(&token)
+                    .ok_or_else(|| anyhow!("Key not found: {}", token))?;
             }
             Value::Array(list) => {
-                let idx: usize = token.parse().map_err(|_| anyhow!("Invalid array index: {}", token))?;
-                current = list.get(idx).ok_or_else(|| anyhow!("Index out of bounds: {}", idx))?;
+                let idx: usize = token
+                    .parse()
+                    .map_err(|_| anyhow!("Invalid array index: {}", token))?;
+                current = list
+                    .get(idx)
+                    .ok_or_else(|| anyhow!("Index out of bounds: {}", idx))?;
             }
-            _ => return Err(anyhow!("Cannot traverse into primitive value at: {}", token)),
+            _ => {
+                return Err(anyhow!(
+                    "Cannot traverse into primitive value at: {}",
+                    token
+                ))
+            }
         }
     }
     Ok(current)
@@ -58,13 +69,24 @@ pub fn set_at_pointer(root: &mut Value, pointer: &str, new_value: Value) -> Resu
     for token in &tokens[..len - 1] {
         match current {
             Value::Object(map) => {
-                current = map.get_mut(token).ok_or_else(|| anyhow!("Key not found: {}", token))?;
+                current = map
+                    .get_mut(token)
+                    .ok_or_else(|| anyhow!("Key not found: {}", token))?;
             }
             Value::Array(list) => {
-                let idx: usize = token.parse().map_err(|_| anyhow!("Invalid array index: {}", token))?;
-                current = list.get_mut(idx).ok_or_else(|| anyhow!("Index out of bounds: {}", idx))?;
+                let idx: usize = token
+                    .parse()
+                    .map_err(|_| anyhow!("Invalid array index: {}", token))?;
+                current = list
+                    .get_mut(idx)
+                    .ok_or_else(|| anyhow!("Index out of bounds: {}", idx))?;
             }
-            _ => return Err(anyhow!("Cannot traverse into primitive value at: {}", token)),
+            _ => {
+                return Err(anyhow!(
+                    "Cannot traverse into primitive value at: {}",
+                    token
+                ))
+            }
         }
     }
 
@@ -79,7 +101,9 @@ pub fn set_at_pointer(root: &mut Value, pointer: &str, new_value: Value) -> Resu
             }
         }
         Value::Array(list) => {
-            let idx: usize = last_token.parse().map_err(|_| anyhow!("Invalid array index: {}", last_token))?;
+            let idx: usize = last_token
+                .parse()
+                .map_err(|_| anyhow!("Invalid array index: {}", last_token))?;
             if let Some(elem) = list.get_mut(idx) {
                 *elem = new_value;
                 Ok(())

@@ -15,13 +15,12 @@ pub fn check_segment_pair(source_kr: &str, target_zh: &str) -> Vec<Issue> {
         issues.push(issue);
     }
 
-    // 3. L04: 关键词方括号后半角空格
-    if let Some(issue) = check_l04_space(target_zh) {
+    // 4. L05: TextMeshPro 标签配对与 LIFO 闭合
+    if let Some(issue) = check_l05_tmp_tags(target_zh) {
         issues.push(issue);
     }
 
-    // 4. L05: TextMeshPro 标签配对与 LIFO 闭合
-    if let Some(issue) = check_l05_tmp_tags(target_zh) {
+    if let Some(issue) = check_tmp_invariant(source_kr, target_zh) {
         issues.push(issue);
     }
 

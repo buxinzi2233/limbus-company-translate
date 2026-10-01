@@ -6,3 +6,8 @@ pub mod rules;
 pub use checker::check_segment_pair;
 pub use fixer::auto_fix_target_zh;
 pub use issue::{Issue, IssueSeverity};
+
+pub mod submission;
+pub use submission::{submit_ai_draft, DraftSubmission, SubmissionError};
+
+pub mod terminology;

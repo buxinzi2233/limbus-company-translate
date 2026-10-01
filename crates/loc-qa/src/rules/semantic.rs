@@ -2,12 +2,26 @@ use crate::issue::{Issue, IssueSeverity};
 use regex::Regex;
 use std::sync::LazyLock;
 
-static NUM_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+(\.\d+)?%?").unwrap());
+static NUM_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[-+−]?\d+(\.\d+)?%?").unwrap());
 
 fn extract_numbers(text: &str) -> Vec<String> {
+    let without_tags = super::l05_tmp::TAG_RE.replace_all(text, " ");
+    let visible = super::l03_placeholder::PLACEHOLDER_RE.replace_all(&without_tags, " ");
     NUM_RE
-        .find_iter(text)
-        .map(|m| m.as_str().to_string())
+        .find_iter(&visible)
+        .map(|m| {
+            let number = m.as_str().replace('−', "-");
+            if number.starts_with('-')
+                && visible[..m.start()]
+                    .chars()
+                    .next_back()
+                    .is_some_and(|c| c.is_ascii_digit())
+            {
+                number[1..].to_string()
+            } else {
+                number
+            }
+        })
         .collect()
 }
 
@@ -39,7 +53,8 @@ pub fn check_numeric_invariant(source_kr: &str, target_zh: &str) -> Option<Issue
 /// 机制正反极性反转校验 (防止 '以下' 翻成 '以上'、'减少' 翻成 '增加')
 pub fn check_polarity_conflict(source_kr: &str, target_zh: &str) -> Option<Issue> {
     // 1. 以下 vs 以上
-    if source_kr.contains("이하") && target_zh.contains("以上") && !target_zh.contains("以下") {
+    if source_kr.contains("이하") && target_zh.contains("以上") && !target_zh.contains("以下")
+    {
         return Some(Issue {
             rule_id: "POLARITY_CONFLICT".to_string(),
             severity: IssueSeverity::Error,
@@ -50,7 +65,8 @@ pub fn check_polarity_conflict(source_kr: &str, target_zh: &str) -> Option<Issue
         });
     }
 
-    if source_kr.contains("이상") && target_zh.contains("以下") && !target_zh.contains("以上") {
+    if source_kr.contains("이상") && target_zh.contains("以下") && !target_zh.contains("以上")
+    {
         return Some(Issue {
             rule_id: "POLARITY_CONFLICT".to_string(),
             severity: IssueSeverity::Error,

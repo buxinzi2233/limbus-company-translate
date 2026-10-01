@@ -13,7 +13,11 @@ pub struct Term {
 }
 
 impl Term {
-    pub fn new(source_kr: impl Into<String>, target_zh: impl Into<String>, category: impl Into<String>) -> Self {
+    pub fn new(
+        source_kr: impl Into<String>,
+        target_zh: impl Into<String>,
+        category: impl Into<String>,
+    ) -> Self {
         Self {
             id: 0,
             source_kr: source_kr.into(),

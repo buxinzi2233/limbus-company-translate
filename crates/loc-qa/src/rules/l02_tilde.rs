@@ -5,7 +5,8 @@ pub fn check_l02_tilde(text: &str) -> Option<Issue> {
         Some(Issue {
             rule_id: "L02".to_string(),
             severity: IssueSeverity::Fatal,
-            message: "发现全角波浪号 (～ 或 〜)，会导致 Unity TextMeshPro 渲染乱码方框 □ 甚至崩溃".to_string(),
+            message: "发现全角波浪号 (～ 或 〜)，会导致 Unity TextMeshPro 渲染乱码方框 □ 甚至崩溃"
+                .to_string(),
             pointer: None,
             auto_fixable: true,
             suggested_fix: Some(text.replace(['\u{FF5E}', '\u{301C}'], "~")),

@@ -2,6 +2,7 @@
 name = "loc-cli"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 
@@ -19,6 +20,7 @@ loc-parser = { workspace = true }
 loc-tm = { workspace = true }
 loc-qa = { workspace = true }
 loc-server = { workspace = true }
+loc-mcp = { workspace = true }
 clap = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
@@ -29,5 +31,9 @@ tracing-subscriber = { workspace = true }
 walkdir = { workspace = true }
 chrono = { workspace = true }
 
-[dev-dependencies]
+uuid = { workspace = true }
 tempfile = { workspace = true }
+sha2 = { workspace = true }
+
+[dev-dependencies]
+rmcp = { workspace = true, features = ["client", "transport-child-process"] }
